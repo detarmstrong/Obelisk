@@ -13,19 +13,27 @@
     :id :red-jem
     :on-close :hide))
 
+(def options-frame
+  (frame
+    :title "Pick"
+    :id :options-frame
+    :on-close :hide))
+
 (def area (text :multi-line? true
-                :text ""
-                :size [300 :by 300]))
+                            :text ""))
 
-(def lb (listbox :size [160 :by 80]))
+(def scrollable-area (scrollable area 
+                             :size [300 :by 350]
+                             :border 0))
 
-(def popup-win (window :content lb
-                       :size [160 :by 80]))
+(def members-lb (listbox :size [160 :by 80]))
+(def projects-lb (listbox :size [160 :by 80]))
 
 (defn get-project-member-name [{:keys [user]}]
   (get-in user [:name]))
 
-; :model (project-members "tim01")
+(defn get-project-name [{:keys [name]}]
+  name)
 
 (defn get-selected-text [text-widget]
   (let [rang (selection text-widget)]
@@ -40,7 +48,10 @@
 
 (defn insert-rm-subject [widge]
   (if-let [selectio (selection widge)]
-    (text! widge (insert (str " " (issue-subject (get-selected-text widge))) (config widge :text) (second selectio)))))
+    (text! widge 
+           (insert 
+             (str " " (issue-subject 
+                        (get-selected-text widge))) (config widge :text) (second selectio)))))
 
 (defn browse-ticket [issue-id]
   (doto 
@@ -63,6 +74,14 @@
 
 (map-key area "control T"
   (fn [widget]
+    ; show the options frame to pick the member and project
+    (config! members-lb :model (map 
+                                 get-project-member-name (web-api/project-members "tim01")))
+    (config! projects-lb :model (map 
+                                 get-project-name (web-api/projects)))
+   
+    (-> options-frame pack! show!)
+    
     ; treat the first selected line as subject, rest as body
     (let [selected-text (get-selected-text widget)
           text-seq (seq (.split #"\n" selected-text))
@@ -72,10 +91,11 @@
           parent-issue-id ""]
       (web-api/create-issue subject (join "\n" body) project-id parent-issue-id))))
 
-(defn display [content]
-  (config! red-jem-frame :content content))
+(def options-panel
+  (horizontal-panel :class :hp :items [(scrollable projects-lb) (scrollable members-lb)]))
 
-(display area)
+(config! red-jem-frame :content scrollable-area)
+(config! options-frame :content options-panel)
 
 (defn -main [& args]
   (invoke-later

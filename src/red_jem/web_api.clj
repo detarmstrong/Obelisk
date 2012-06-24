@@ -16,6 +16,14 @@
        :as :json})
     [:body :memberships]))
 
+(defn projects []
+  (get-in 
+    (client/get
+      "http://redmine.visiontree.com/projects.json" 
+      {:basic-auth [api-token "d"]
+       :as :json})
+    [:body :projects]))
+
 (defn issue [id]
   (client/get 
     (format "http://redmine.visiontree.com/issues/%d.json" 
