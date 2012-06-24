@@ -1,9 +1,8 @@
 (ns red-jem.core
+  (:require [red-jem.web-api :as web-api])
   (:use seesaw.core)
   (:use seesaw.keymap)
-  (:use cheshire.core)
-  (:use [clojure.string :only (trim join)])
-  (:require [clj-http.client :as client])
+  (:use [clojure.string :only (join)])
   (:import (java.awt Desktop) (java.net URI)))
 
 (native!)
@@ -17,54 +16,23 @@
 (def area (text :multi-line? true
                 :text ""
                 :size [300 :by 300]))
-(def api-token 
-  "e647bfc4397bc3f8010521b36c72d182477d11ee")
 
-(defn project-members [project-id]
-  (client/get 
-    (format "http://redmine.visiontree.com/projects/%s/memberships.json"
-      project-id) 
-    {:basic-auth [api-token "d"]}))
+(def lb (listbox :size [160 :by 80]))
+
+(def popup-win (window :content lb
+                       :size [160 :by 80]))
+
+(defn get-project-member-name [{:keys [user]}]
+  (get-in user [:name]))
 
 ; :model (project-members "tim01")
-
-
-(def popup-win (window :content (listbox :size [160 :by 80])
-                       :size [160 :by 80]))
 
 (defn get-selected-text [text-widget]
   (let [rang (selection text-widget)]
     (subs (config text-widget :text) (first rang) (second rang))))
 
-(defn issue [id]
-  (client/get 
-    (format "http://redmine.visiontree.com/issues/%d.json" 
-      (#(Integer/parseInt %) (trim id))) 
-    {:as :json
-     :basic-auth [api-token "random"]
-     :query-params {:include "children"}}))
-
 (defn issue-subject [id]
-  (-> (issue id) (get-in [:body :issue :subject])))
-
-
-(defn create-issue [subject body project-id parent-issue-id]
-  (client/post "http://redmine.visiontree.com/issues.json"
-    {:basic-auth [api-token "random"]
-     :body (generate-string {:issue {:subject subject 
-                                     :description body
-                                     :project_id project-id
-                                     :parent_issue_id parent-issue-id}})
-     :content-type :json
-     :socket-timeout 1000
-     :conn-timeout 1000
-     :accept :json
-     :throw-entire-message? true}))
-
-;(listen area :key-released
-;  (fn [e]
-;    (if-let [selectio (selection e)]
-;      (println (format "selection is '%s'" selectio)))))
+  (-> (web-api/issue id) (get-in [:body :issue :subject])))
 
 (defn insert [piece string at-pos]
   (apply str (map clojure.string/join (let [v (split-at at-pos string)]
@@ -87,11 +55,25 @@
 
 (map-key area "control G"
   (fn [widget]
-      (browse-ticket (get-selected-text widget))))
+    (browse-ticket (get-selected-text widget))))
+
+(map-key area "control N"
+  (fn [widget]
+    (text! widget (map get-project-member-name (web-api/project-members "tim01")))))
+
+(map-key area "control T"
+  (fn [widget]
+    ; treat the first selected line as subject, rest as body
+    (let [selected-text (get-selected-text widget)
+          text-seq (seq (.split #"\n" selected-text))
+          subject (first text-seq)
+          body (rest text-seq)
+          project-id "tim01"
+          parent-issue-id ""]
+      (web-api/create-issue subject (join "\n" body) project-id parent-issue-id))))
 
 (defn display [content]
-  (config! red-jem-frame :content content)
-  content)
+  (config! red-jem-frame :content content))
 
 (display area)
 
@@ -100,7 +82,5 @@
     (-> red-jem-frame
      pack!
      show!)))
-
-
 
 (-> red-jem-frame pack! show!)

@@ -1,0 +1,42 @@
+(ns red-jem.web-api
+  "Wrap the api calls - no guarding of params here"
+  (:require [clj-http.client :as client])
+  (:use [cheshire.core :only (generate-string)])
+  (:use [clojure.string :only (trim)]))
+
+(def api-token 
+  "e647bfc4397bc3f8010521b36c72d182477d11ee")
+
+(defn project-members [project-id]
+  (get-in 
+    (client/get 
+      (format "http://redmine.visiontree.com/projects/%s/memberships.json"
+        project-id) 
+      {:basic-auth [api-token "d"]
+       :as :json})
+    [:body :memberships]))
+
+(defn issue [id]
+  (client/get 
+    (format "http://redmine.visiontree.com/issues/%d.json" 
+      (#(Integer/parseInt %) (trim id))) 
+    {:as :json
+     :basic-auth [api-token "random"]
+     :query-params {:include "children"}}))
+
+(defn create-issue [subject body project-id parent-issue-id]
+  (println (generate-string {:issue {:subject subject
+                                     :description body
+                                     :project_id project-id
+                                     :parent_issue_id parent-issue-id}}))
+  (client/post "http://redmine.visiontree.com/issues.json"
+    {:basic-auth [api-token "random"]
+     :body (generate-string {:issue {:subject subject 
+                                     :description body
+                                     :project_id project-id
+                                     :parent_issue_id parent-issue-id}})
+     :content-type :json
+     :socket-timeout 8000
+     :conn-timeout 8000
+     :accept :json
+     :throw-entire-message? true}))
