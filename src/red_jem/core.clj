@@ -26,14 +26,14 @@
                              :size [300 :by 350]
                              :border 0))
 
-(def members-lb (listbox :size [160 :by 80]))
-(def projects-lb (listbox :size [160 :by 80]))
+(def members-lb (listbox))
+(def projects-lb (listbox))
 
 (defn get-project-member-name [{:keys [user]}]
   (get-in user [:name]))
 
-(defn get-project-name [{:keys [name]}]
-  name)
+(defn get-project-name [{:keys [name identifier]}]
+  {:name name :id identifier})
 
 (defn get-selected-text [text-widget]
   (let [rang (selection text-widget)]
@@ -74,25 +74,38 @@
 
 (map-key area "control T"
   (fn [widget]
-    ; show the options frame to pick the member and project
-    (config! members-lb :model (map 
-                                 get-project-member-name (web-api/project-members "tim01")))
+    ; show the options frame to pick the project and then the member
     (config! projects-lb :model (map 
                                  get-project-name (web-api/projects)))
+    ;(config! members-lb :model (map 
+    ;                             get-project-member-name (web-api/project-members "tim01")))
    
-    (-> options-frame pack! show!)
-    
-    ; treat the first selected line as subject, rest as body
-    (let [selected-text (get-selected-text widget)
+    (-> options-frame pack! show!)))
+
+(def options-ok-btn
+  (button :text "Continue"
+                    :margin 10))
+
+(listen options-ok-btn :mouse-clicked
+  (fn [e]
+    (let [project-id (selection projects-lb)
+          member-id (selection members-lb)
+          selected-text (get-selected-text area)
           text-seq (seq (.split #"\n" selected-text))
           subject (first text-seq)
           body (rest text-seq)
-          project-id "tim01"
           parent-issue-id ""]
-      (web-api/create-issue subject (join "\n" body) project-id parent-issue-id))))
+      (web-api/create-issue subject (join "\n" body) project-id member-id parent-issue-id))
+    
+    ; close window
+    (println "ok")))
 
 (def options-panel
-  (horizontal-panel :class :hp :items [(scrollable projects-lb) (scrollable members-lb)]))
+  (scrollable (horizontal-panel 
+    :class :hp 
+    :items [(scrollable projects-lb) 
+            (scrollable members-lb)
+             options-ok-btn])))
 
 (config! red-jem-frame :content scrollable-area)
 (config! options-frame :content options-panel)

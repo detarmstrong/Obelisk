@@ -21,7 +21,8 @@
     (client/get
       "http://redmine.visiontree.com/projects.json" 
       {:basic-auth [api-token "d"]
-       :as :json})
+       :as :json
+       :query-params {:limit 300}})
     [:body :projects]))
 
 (defn issue [id]
@@ -32,10 +33,11 @@
      :basic-auth [api-token "random"]
      :query-params {:include "children"}}))
 
-(defn create-issue [subject body project-id parent-issue-id]
+(defn create-issue [subject body project-id member-id parent-issue-id]
   (println (generate-string {:issue {:subject subject
                                      :description body
                                      :project_id project-id
+                                     :assigned_to_id member-id
                                      :parent_issue_id parent-issue-id}}))
   (client/post "http://redmine.visiontree.com/issues.json"
     {:basic-auth [api-token "random"]
