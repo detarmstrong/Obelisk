@@ -29,11 +29,19 @@
 (def members-lb (listbox))
 (def projects-lb (listbox))
 
-(defn get-project-member-name [{:keys [user]}]
-  (get-in user [:name]))
+;(defn get-project-member [{:keys [user]}]
+;  {:name (get-in user [:name]) :id (get-in user [:id])})
 
-(defn get-project-name [{:keys [name identifier]}]
+(defn get-project [{:keys [name identifier]}]
   {:name name :id identifier})
+
+(defn projects-listbox-model
+  (map get-project (web-api/projects)))
+
+(defn projects-list-renderer [renderer info]
+  (let [v (:value info)]
+    (apply config! renderer
+           [:text (str (:name v))])))
 
 (defn get-selected-text [text-widget]
   (let [rang (selection text-widget)]
@@ -61,24 +69,23 @@
         (format "http://redmine.visiontree.com/issues/%s" issue-id)))))
 
 (map-key area "control R"
+  ; Read in the subject of this ticket #
   (fn [widget]
     (insert-rm-subject widget)))
 
 (map-key area "control G"
+  ; Go to this ticket in a browser
   (fn [widget]
     (browse-ticket (get-selected-text widget))))
 
-(map-key area "control N"
-  (fn [widget]
-    (text! widget (map get-project-member-name (web-api/project-members "tim01")))))
-
 (map-key area "control T"
+  ; Ticket this
   (fn [widget]
     ; show the options frame to pick the project and then the member
-    (config! projects-lb :model (map 
-                                 get-project-name (web-api/projects)))
+    (config! projects-lb :model (projects-listbox-model)
+             :renderer (projects-list-renderer))
     ;(config! members-lb :model (map 
-    ;                             get-project-member-name (web-api/project-members "tim01")))
+     ;                            get-project-member (web-api/project-members "tim01")))
    
     (-> options-frame pack! show!)))
 
@@ -86,10 +93,10 @@
   (button :text "Continue"
                     :margin 10))
 
-(listen options-ok-btn :mouse-clicked
+(listen options-ok-btn :selection
   (fn [e]
-    (let [project-id (selection projects-lb)
-          member-id (selection members-lb)
+    (let [project-id (:id (selection projects-lb))
+          member-id (:id (selection members-lb))
           selected-text (get-selected-text area)
           text-seq (seq (.split #"\n" selected-text))
           subject (first text-seq)
