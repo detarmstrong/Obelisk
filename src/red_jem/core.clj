@@ -29,13 +29,13 @@
 (def members-lb (listbox))
 (def projects-lb (listbox))
 
-;(defn get-project-member [{:keys [user]}]
-;  {:name (get-in user [:name]) :id (get-in user [:id])})
+(defn get-project-member [{:keys [user]}]
+  {:name (get-in user [:name]) :id (get-in user [:id])})
 
 (defn get-project [{:keys [name identifier]}]
   {:name name :id identifier})
 
-(defn projects-listbox-model
+(defn projects-listbox-model []
   (map get-project (web-api/projects)))
 
 (defn projects-list-renderer [renderer info]
@@ -83,9 +83,9 @@
   (fn [widget]
     ; show the options frame to pick the project and then the member
     (config! projects-lb :model (projects-listbox-model)
-             :renderer (projects-list-renderer))
-    ;(config! members-lb :model (map 
-     ;                            get-project-member (web-api/project-members "tim01")))
+             :renderer projects-list-renderer)
+    (config! members-lb :model (map 
+                                 get-project-member (web-api/project-members "tim01")))
    
     (-> options-frame pack! show!)))
 
