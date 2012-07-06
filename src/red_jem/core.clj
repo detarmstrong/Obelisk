@@ -1,5 +1,6 @@
 (ns red-jem.core
   (:require [red-jem.web-api :as web-api])
+  (:require [red-jem.state-machine :as sm])
   (:use seesaw.core)
   (:use seesaw.keymap)
   (:use [clojure.string :only (join)])
