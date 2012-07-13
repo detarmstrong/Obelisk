@@ -1,6 +1,7 @@
 (ns red-jem.core
   (:require [red-jem.web-api :as web-api])
   (:require [red-jem.state-machine :as sm])
+  ;(:require [red-jem.events :as events])
   (:use seesaw.core)
   (:use seesaw.keymap)
   (:use [clojure.string :only (join)])
@@ -27,8 +28,14 @@
                              :size [300 :by 350]
                              :border 0))
 
-(def members-lb (listbox))
-(def projects-lb (listbox))
+(defn list-renderer [renderer info]
+  (let [v (:value info)]
+    (apply config! renderer
+           [:text (str (:name v))])))
+
+
+(def members-lb (listbox :renderer list-renderer))
+(def projects-lb (listbox :renderer list-renderer))
 
 (defn get-project-member [{:keys [user]}]
   {:name (get-in user [:name]) :id (get-in user [:id])})
@@ -39,10 +46,6 @@
 (defn projects-listbox-model []
   (map get-project (web-api/projects)))
 
-(defn projects-list-renderer [renderer info]
-  (let [v (:value info)]
-    (apply config! renderer
-           [:text (str (:name v))])))
 
 (defn get-selected-text [text-widget]
   (let [rang (selection text-widget)]
@@ -69,44 +72,13 @@
       (URI/create 
         (format "http://redmine.visiontree.com/issues/%s" issue-id)))))
 
-(map-key area "control R"
-  ; Read in the subject of this ticket #
-  (fn [widget]
-    (insert-rm-subject widget)))
 
-(map-key area "control G"
-  ; Go to this ticket in a browser
-  (fn [widget]
-    (browse-ticket (get-selected-text widget))))
-
-(map-key area "control T"
-  ; Ticket this
-  (fn [widget]
-    ; show the options frame to pick the project and then the member
-    (config! projects-lb :model (projects-listbox-model)
-             :renderer projects-list-renderer)
-    (config! members-lb :model (map 
-                                 get-project-member (web-api/project-members "tim01")))
-   
-    (-> options-frame pack! show!)))
 
 (def options-ok-btn
   (button :text "Continue"
                     :margin 10))
 
-(listen options-ok-btn :selection
-  (fn [e]
-    (let [project-id (:id (selection projects-lb))
-          member-id (:id (selection members-lb))
-          selected-text (get-selected-text area)
-          text-seq (seq (.split #"\n" selected-text))
-          subject (first text-seq)
-          body (rest text-seq)
-          parent-issue-id ""]
-      (web-api/create-issue subject (join "\n" body) project-id member-id parent-issue-id))
-    
-    ; close window
-    (println "ok")))
+
 
 (def options-panel
   (scrollable (horizontal-panel 
@@ -125,3 +97,44 @@
      show!)))
 
 (-> red-jem-frame pack! show!)
+
+(load "events")
+
+(map-key area "control R"
+  ; Read in the subject of this ticket #
+  (fn [widget]
+    (insert-rm-subject widget)))
+
+(map-key area "control G"
+  ; Go to this ticket in a browser
+  (fn [widget]
+    (browse-ticket (get-selected-text widget))))
+
+(map-key area "control T"
+  ; Ticket this
+  (fn [widget]
+    (handle-event on-create-ticket-form-visible)))
+
+(listen projects-lb :selection
+  (fn [e]
+    (handle-event on-project-selected)))
+
+(listen members-lb :selection
+  (fn [e]
+    (handle-event on-project-member-selected)))
+
+(listen options-ok-btn :mouse-clicked
+  (fn [e]
+    (let [project-id (:id (selection projects-lb))
+          member-id (:id (selection members-lb))
+          selected-text (get-selected-text area)
+          text-seq (seq (.split #"\n" selected-text))
+          subject (first text-seq)
+          body (rest text-seq)
+          parent-issue-id ""]
+      (web-api/create-issue subject (join "\n" body) project-id member-id parent-issue-id))
+    
+    ; close window
+    (-> options-frame hide!)
+    
+    (println "ok")))

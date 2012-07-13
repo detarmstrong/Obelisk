@@ -44,6 +44,7 @@
      :body (generate-string {:issue {:subject subject 
                                      :description body
                                      :project_id project-id
+                                     :assigned_to_id member-id
                                      :parent_issue_id parent-issue-id}})
      :content-type :json
      :socket-timeout 8000
