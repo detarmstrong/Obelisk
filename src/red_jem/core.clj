@@ -1,7 +1,7 @@
 (ns red-jem.core
   (:require [red-jem.web-api :as web-api])
   (:require [red-jem.state-machine :as sm])
-  ;(:require [red-jem.events :as events])
+  (:use [clj-http.util :only (url-encode)])
   (:use seesaw.core)
   (:use seesaw.keymap)
   (:use [clojure.string :only (join)])
@@ -70,9 +70,38 @@
     (Desktop/getDesktop) 
     (.browse 
       (URI/create 
-        (format "http://redmine.visiontree.com/issues/%s" issue-id)))))
+        (format "http://redmine.visiontree.com/issues/%s" 
+                (url-encode issue-id))))))
 
+(defn open-url-on-desktop [url]
+  "Given a url open it in the default desktop browser"
+  (doto 
+    (Desktop/getDesktop) 
+    (.browse 
+      (URI/create url))))
+  
+(defn redmine-search-url 
+  "Generate query string that is a search of rm"
+  [search-string project resources]
+  (let [query-map {:all_words 1
+                   :utf8=✓
+                   :q (url-encode search-string)}
+        resources-map (apply hash-map 
+           (interleave resources (repeat 
+                                   (count resources) 1)))
+        combined-map (merge query-map resources-map)]
 
+    (str "https://redmine.visiontree.com/"
+         (if (= project "")
+           "search"
+           (str "projects/" project))
+         "?"
+         (join "&" 
+               (for [[k v] combined-map] 
+                 (str (name k) "=" v))))))
+
+(def resources
+  '(:issues :news :documents :wiki_pages :changesets))
 
 (def options-ok-btn
   (button :text "Continue"
@@ -106,7 +135,7 @@
     (insert-rm-subject widget)))
 
 (map-key area "control G"
-  ; Go to this ticket in a browser
+  ; Go search this text
   (fn [widget]
     (browse-ticket (get-selected-text widget))))
 
