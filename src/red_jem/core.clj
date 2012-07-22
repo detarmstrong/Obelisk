@@ -73,25 +73,25 @@
         (format "http://redmine.visiontree.com/issues/%s" 
                 (url-encode issue-id))))))
 
-(defn open-url-on-desktop [url]
+(defn open-url-on-desktop
   "Given a url open it in the default desktop browser"
+  [url]
   (doto 
     (Desktop/getDesktop) 
     (.browse 
       (URI/create url))))
   
-(defn redmine-search-url 
+(defn redmine-search-url
   "Generate query string that is a search of rm"
   [search-string project resources]
   (let [query-map {:all_words 1
-                   :utf8=✓
                    :q (url-encode search-string)}
         resources-map (apply hash-map 
            (interleave resources (repeat 
                                    (count resources) 1)))
         combined-map (merge query-map resources-map)]
 
-    (str "https://redmine.visiontree.com/"
+    (str "http://redmine.visiontree.com/"
          (if (= project "")
            "search"
            (str "projects/" project))
@@ -106,8 +106,6 @@
 (def options-ok-btn
   (button :text "Continue"
                     :margin 10))
-
-
 
 (def options-panel
   (scrollable (horizontal-panel 
@@ -137,7 +135,8 @@
 (map-key area "control G"
   ; Go search this text
   (fn [widget]
-    (browse-ticket (get-selected-text widget))))
+    (open-url-on-desktop 
+      (redmine-search-url (get-selected-text widget) "" resources))))
 
 (map-key area "control T"
   ; Ticket this
