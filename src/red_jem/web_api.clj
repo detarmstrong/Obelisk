@@ -17,13 +17,14 @@
     [:body :memberships]))
 
 (defn projects []
-  (get-in 
-    (client/get
-      "http://redmine.visiontree.com/projects.json" 
-      {:basic-auth [api-token "d"]
-       :as :json
-       :query-params {:limit 300}})
-    [:body :projects]))
+  (sort-by :name
+	  (get-in 
+	    (client/get
+	      "http://redmine.visiontree.com/projects.json" 
+	      {:basic-auth [api-token "d"]
+	       :as :json
+	       :query-params {:limit 300}})
+	    [:body :projects])))
 
 (defn issue [id]
   (client/get 
