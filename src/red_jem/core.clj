@@ -65,14 +65,6 @@
              (str " " (issue-subject 
                         (get-selected-text widge))) (config widge :text) (second selectio)))))
 
-(defn browse-ticket [issue-id]
-  (doto 
-    (Desktop/getDesktop) 
-    (.browse 
-      (URI/create 
-        (format "http://redmine.visiontree.com/issues/%s" 
-                (url-encode issue-id))))))
-
 (defn open-url-on-desktop
   "Given a url open it in the default desktop browser"
   [url]
