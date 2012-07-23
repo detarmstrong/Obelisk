@@ -9,18 +9,6 @@
 
 (native!)
 
-(def red-jem-frame
-  (frame
-    :title "Obelisk"
-    :id :red-jem
-    :on-close :hide))
-
-(def options-frame
-  (frame
-    :title "Pick"
-    :id :options-frame
-    :on-close :hide))
-
 (def area (text :multi-line? true
                             :text ""))
 
@@ -95,6 +83,29 @@
 (def resources
   '(:issues :news :documents :wiki_pages :changesets))
 
+
+(def red-jem-frame
+  (frame
+    :title "Obelisk"
+    :id :red-jem
+    :on-close :hide
+    :content (border-panel 
+               :vgap 5
+               :north (toolbar 
+                        :floatable? false
+                        :items [(button 
+                                  :id :save-button
+                                  :text "Save")
+                                :separator
+                                (button
+                                  :id :import-button
+                                  :text "Import")
+                                [:fill-h 5]
+                                (button
+                                  :id :go-to-button
+                                  :text "Go to ...")])
+               :center scrollable-area)))
+
 (def options-ok-btn
   (button :text "Continue"
                     :margin 10))
@@ -106,7 +117,31 @@
             (scrollable members-lb)
              options-ok-btn])))
 
-(config! red-jem-frame :content scrollable-area)
+(def options-frame
+  (frame
+    :title "Pick"
+    :id :options-frame
+    :on-close :hide))
+
+(def projects-frame
+  (frame
+    :title "Projects"
+    :id :projects-frame
+    :on-close :hide
+    :content (horizontal-panel
+               :items [(scrollable (listbox
+                                     :id :go-to-projects-lb
+                                     :renderer list-renderer))
+                       (button
+                         :id :go-to-project-button
+                         :text "Go")])))
+
+(defn go-to-feature-button-handler [event]
+  (config! 
+    (select projects-frame [:#go-to-projects-lb])
+    :model (projects-listbox-model))
+  (-> projects-frame pack! show!))
+
 (config! options-frame :content options-panel)
 
 (defn -main [& args]
@@ -134,6 +169,17 @@
   ; Ticket this
   (fn [widget]
     (handle-event on-create-ticket-form-visible)))
+
+(listen (select red-jem-frame [:#go-to-button])
+        :action go-to-feature-button-handler)
+
+(listen (select projects-frame [:#go-to-project-button])
+        :action (fn [e] 
+                  (open-url-on-desktop
+                    (str "http://redmine.visiontree.com/projects/" 
+                       (:id (selection (select projects-frame
+                                               [:#go-to-projects-lb])))))
+                  (-> projects-frame hide!)))
 
 (listen projects-lb :selection
   (fn [e]
