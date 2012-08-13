@@ -10,7 +10,7 @@
 (native!)
 
 (def area (text :multi-line? true
-                            :text ""))
+                            :text (slurp ".obelisk")))
 
 (def scrollable-area (scrollable area 
                              :size [300 :by 350]
@@ -97,14 +97,17 @@
                                   :id :save-button
                                   :text "Save")
                                 :separator
-                                (button
-                                  :id :import-button
-                                  :text "Import")
+                                ;(button
+                                ;  :id :import-button
+                                ;  :text "Import")
                                 [:fill-h 5]
                                 (button
                                   :id :go-to-button
                                   :text "Go to ...")])
-               :center scrollable-area)))
+               :center scrollable-area
+               :south (flow-panel
+                        :align :right
+                        :items ["Personal Notes"]))))
 
 (def options-ok-btn
   (button :text "Continue"
@@ -170,16 +173,21 @@
   (fn [widget]
     (handle-event on-create-ticket-form-visible)))
 
-(listen (select red-jem-frame [:#go-to-button])
-        :action go-to-feature-button-handler)
+(listen (select red-jem-frame [:#go-to-button]) :action 
+        go-to-feature-button-handler)
 
-(listen (select projects-frame [:#go-to-project-button])
-        :action (fn [e] 
-                  (open-url-on-desktop
-                    (str "http://redmine.visiontree.com/projects/" 
-                       (:id (selection (select projects-frame
-                                               [:#go-to-projects-lb])))))
-                  (-> projects-frame hide!)))
+(listen (select projects-frame [:#go-to-project-button]) :action 
+  (fn [e] 
+    (open-url-on-desktop
+      (str "http://redmine.visiontree.com/projects/" 
+         (:id (selection (select projects-frame
+                                 [:#go-to-projects-lb])))))
+    (-> projects-frame hide!)))
+
+(listen (select red-jem-frame [:#save-button]) :action
+  (fn [e]
+    (print "save clicked")
+    (spit ".obelisk" (config area :text))))
 
 (listen projects-lb :selection
   (fn [e]
