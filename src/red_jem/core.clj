@@ -1,6 +1,6 @@
 (ns red-jem.core
+  (:gen-class) ; required for uberjar
   (:require [red-jem.web-api :as web-api])
-  (:require [red-jem.state-machine :as sm])
   (:use [clj-http.util :only (url-encode)])
   (:use seesaw.core)
   (:use seesaw.keymap)
