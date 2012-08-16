@@ -4,7 +4,7 @@
   (:use [clj-http.util :only (url-encode)])
   (:use seesaw.core)
   (:use seesaw.keymap)
-  (:use [clojure.string :only (join)])
+  (:use [clojure.string :only (join lower-case)])
   (:import (java.awt Desktop) (java.net URI)))
 
 (native!)
@@ -189,9 +189,36 @@
     (print "save clicked")
     (spit ".obelisk" (config area :text))))
 
-(listen projects-lb :selection
-  (fn [e]
-    (handle-event on-project-selected)))
+;(listen projects-lb :selection
+;  (fn [e]
+;    (handle-event on-project-selected)))
+
+(def project-keys-log [])
+
+(def projects-lb-key-listener 
+  (listen projects-lb :key-pressed
+        (fn [e]
+          (let [keyed (str (.getKeyChar e))
+                keyed-code (.getKeyCode e)
+                count-keys-entered (count project-keys-log)
+                projects-model (.toArray (.getModel projects-lb))]
+            (if (and (= keyed-code 8) (> count-keys-entered 0)) ; 8 = backspace
+              (def project-keys-log 
+                (subvec project-keys-log 0 (- count-keys-entered 1)))
+              (def project-keys-log 
+                (conj project-keys-log keyed)))
+            
+            (selection! projects-lb
+                        (first
+                          (filter (fn [x] 
+                                    (re-seq 
+                                      (re-pattern 
+                                        (str "(?i)^" 
+                                             (apply str project-keys-log))) 
+                                      (:name x)))
+                                  projects-model)))
+            
+            (handle-event on-project-selected)))))
 
 (listen members-lb :selection
   (fn [e]
