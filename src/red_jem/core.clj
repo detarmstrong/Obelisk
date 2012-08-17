@@ -189,9 +189,10 @@
     (print "save clicked")
     (spit ".obelisk" (config area :text))))
 
-;(listen projects-lb :selection
-;  (fn [e]
-;    (handle-event on-project-selected)))
+(listen projects-lb :mouse-clicked
+  (fn [e]
+    (def project-keys-log [])
+    (handle-event on-project-selected)))
 
 (def project-keys-log [])
 
@@ -208,15 +209,18 @@
               (def project-keys-log 
                 (conj project-keys-log keyed)))
             
-            (selection! projects-lb
-                        (first
-                          (filter (fn [x] 
-                                    (re-seq 
-                                      (re-pattern 
-                                        (str "(?i)^" 
-                                             (apply str project-keys-log))) 
-                                      (:name x)))
-                                  projects-model)))
+            
+            (if-let [search-on (first
+                                 (filter (fn [x] 
+                                           (re-seq 
+                                             (re-pattern 
+                                               (str "(?i)^" 
+                                                    (apply str project-keys-log))) 
+                                             (:name x)))
+                                         projects-model))]
+              (do (selection! projects-lb search-on)
+                (scroll! projects-lb :to [:row (.getSelectedIndex projects-lb)]))
+              0)
             
             (handle-event on-project-selected)))))
 
