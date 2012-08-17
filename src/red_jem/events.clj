@@ -33,8 +33,10 @@
 
 (defn on-project-selected [event]  
   ; load members for project
-  (config! members-lb :model (map get-project-member 
-                                  (web-api/project-members (:id (selection projects-lb))))))
+  (if-let [selected-project-id (:id (selection projects-lb))]
+    (config! members-lb :model (map get-project-member 
+                                  (web-api/project-members selected-project-id)))
+    (print "no project selection")))
 
 (defn on-project-member-selected [event]
   ; enable save button
