@@ -1,11 +1,19 @@
 (ns red-jem.web-api
   "Wrap the api calls - no guarding of params here"
   (:require [clj-http.client :as client])
+  (:require [clojure.java.io :as io])
   (:use [cheshire.core :only (generate-string)])
   (:use [clojure.string :only (trim)]))
 
-(def api-token 
-  "e647bfc4397bc3f8010521b36c72d182477d11ee")
+(def obelisk-token-file-path
+  ".obelisk_rm_token")
+
+(defn token? []
+  (-> (io/file obelisk-token-file-path) (.isFile)))
+
+(defn load-token []
+  (def api-token 
+    (trim (slurp obelisk-token-file-path))))
 
 (defn project-members [project-id]
   (get-in 
@@ -52,3 +60,11 @@
      :conn-timeout 8000
      :accept :json
      :throw-entire-message? true}))
+
+(defn valid-token? []
+  "Make a request using the token provided, expect 200"
+  (let [response (client/get "http://redmine.visiontree.com/users/current.json" 
+                                  {:basic-auth [api-token "d"]
+                                   :as :json
+                                   :throw-exceptions false})]
+    (= 200 (:status response))))

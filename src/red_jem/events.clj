@@ -17,7 +17,7 @@
 (defn on-create-ticket-form-visible [event]
   ; only state is inactive
   ; show picker frame
-  (-> options-frame pack! show!)
+  (-> options-frame show!) ; not calling pack! because it negates size setting
   
   ; disable save button
   (config! options-ok-btn :enabled? false)

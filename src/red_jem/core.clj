@@ -1,16 +1,21 @@
 (ns red-jem.core
   (:gen-class) ; required for uberjar
   (:require [red-jem.web-api :as web-api])
+  (:require [clojure.java.io :as io])
   (:use [clj-http.util :only (url-encode)])
   (:use seesaw.core)
   (:use seesaw.keymap)
   (:use [clojure.string :only (join lower-case)])
-  (:import (java.awt Desktop) (java.net URI)))
+  (:import (java.awt Desktop) 
+           (java.net URI)))
 
 (native!)
 
+(def api-token)
+
 (def area (text :multi-line? true
-                            :text (slurp ".obelisk")))
+                            :text ""
+                            :wrap-lines? true))
 
 (def scrollable-area (scrollable area 
                              :size [300 :by 350]
@@ -104,10 +109,7 @@
                                 (button
                                   :id :go-to-button
                                   :text "Go to ...")])
-               :center scrollable-area
-               :south (flow-panel
-                        :align :right
-                        :items ["Personal Notes"]))))
+               :center scrollable-area)))
 
 (def options-ok-btn
   (button :text "Continue"
@@ -124,7 +126,8 @@
   (frame
     :title "Pick"
     :id :options-frame
-    :on-close :hide))
+    :on-close :hide
+    :size [728 :by 230]))
 
 (def projects-frame
   (frame
@@ -209,7 +212,6 @@
               (def project-keys-log 
                 (conj project-keys-log keyed)))
             
-            
             (if-let [search-on (first
                                  (filter (fn [x] 
                                            (re-seq 
@@ -243,3 +245,22 @@
     (-> options-frame hide!)
     
     (println "ok")))
+
+(defn valid-token? []
+  (try (web-api/valid-token?)
+    (catch java.net.ConnectException e 
+      (alert "Connection timed out. On VPN?"))))
+
+(defn init-red-jem  []
+  ; test for note file
+  (if (-> (io/file ".obelisk") (.isFile))
+    (text! area (slurp ".obelisk"))
+    (spit ".obelisk" ""))
+  
+  (if (web-api/token?)
+    (web-api/load-token)
+    (alert (str "Redmine api token not found.\n\nCreate a file called " 
+                web-api/obelisk-token-file-path 
+                " and paste token found under you account settings."))))
+
+(init-red-jem)
