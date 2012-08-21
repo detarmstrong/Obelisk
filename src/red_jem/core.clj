@@ -39,7 +39,6 @@
 (defn projects-listbox-model []
   (map get-project (web-api/projects)))
 
-
 (defn get-selected-text [text-widget]
   (let [rang (selection text-widget)]
     (subs (config text-widget :text) (first rang) (second rang))))
@@ -48,15 +47,28 @@
   (-> (web-api/issue id) (get-in [:body :issue :subject])))
 
 (defn insert [piece string at-pos]
-  (apply str (map clojure.string/join (let [v (split-at at-pos string)]
-    [(first v) piece (second v)]))))
+  (apply str (map clojure.string/join 
+                  (let [v (split-at at-pos string)]
+                    [(first v) piece (second v)]))))
 
 (defn insert-rm-subject [widge]
   (if-let [selectio (selection widge)]
     (text! widge 
            (insert 
              (str " " (issue-subject 
-                        (get-selected-text widge))) (config widge :text) (second selectio)))))
+                        (get-selected-text widge)))
+             (config widge :text)
+             (second selectio)))))
+
+(defn insert-new-issue-id 
+  "Insert the passed in id at position in the string of the widget"
+  [issue-id position in-widget]
+  (text! 
+    in-widget
+    (insert (str issue-id " ")
+            (text in-widget)
+            position))
+  (config! in-widget :caret-position position))
 
 (defn open-url-on-desktop
   "Given a url open it in the default desktop browser"
@@ -87,7 +99,6 @@
 
 (def resources
   '(:issues :news :documents :wiki_pages :changesets))
-
 
 (def red-jem-frame
   (frame
@@ -235,16 +246,23 @@
     (let [project-id (:id (selection projects-lb))
           member-id (:id (selection members-lb))
           selected-text (get-selected-text area)
+          selected-text-start (first (selection area))
           text-seq (seq (.split #"\n" selected-text))
           subject (first text-seq)
           body (rest text-seq)
-          parent-issue-id ""]
-      (web-api/create-issue subject (join "\n" body) project-id member-id parent-issue-id))
-    
-    ; close window
-    (-> options-frame hide!)
-    
-    (println "ok")))
+          parent-issue-id ""
+          response (web-api/create-issue 
+                       subject
+                       (join "\n" body)
+                       project-id
+                       member-id
+                       parent-issue-id)
+          issue-id (get-in
+                     response
+                     [:body :issue :id])]
+        (insert-new-issue-id issue-id selected-text-start area))
+        
+    (-> options-frame hide!)))
 
 (defn valid-token? []
   (try (web-api/valid-token?)

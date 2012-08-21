@@ -59,6 +59,7 @@
      :socket-timeout 8000
      :conn-timeout 8000
      :accept :json
+     :as :json
      :throw-entire-message? true}))
 
 (defn valid-token? []
