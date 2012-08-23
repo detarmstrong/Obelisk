@@ -3,15 +3,18 @@
   (:require [red-jem.web-api :as web-api])
   (:require [clojure.java.io :as io])
   (:use [clj-http.util :only (url-encode)])
-  (:use seesaw.core)
+  (:use [seesaw core mig])
   (:use seesaw.keymap)
   (:use [clojure.string :only (join lower-case)])
   (:import (java.awt Desktop) 
-           (java.net URI)))
+           (java.net URI)
+           (java.awt Color)))
 
 (native!)
 
 (def api-token)
+
+(def redditor "http://static.reddit.com/reddit.com.header.png")
 
 (def area (text :multi-line? true
                             :text ""
@@ -100,27 +103,65 @@
 (def resources
   '(:issues :news :documents :wiki_pages :changesets))
 
+(defn open-config-dialog [parent-frame]
+  "Builds and shows dialog for configuring obelisk. Returns values of form"
+  (let [ok-act (action
+                 :name "Ok"
+                 :handler (fn [e]
+                            (let [values (value (to-frame e))]
+                              (if (:check-connection values)
+                                (alert 
+                                  (str "Test result: " 
+                                       (web-api/valid-token? (:api-key values)))))
+                              (return-from-dialog e values))))
+        cancel-act (action
+                     :name "Cancel"
+                     :handler (fn [e] (return-from-dialog e nil)))]
+    (-> (custom-dialog
+         :title "Config"
+         :parent parent-frame
+         :modal? true
+         :resizable? false
+         :content (mig-panel
+                    :items [["Redmine API key"]
+                            [(text
+                               :id :api-key
+                               :columns 25 
+                               :multi-line? false) "wrap"]
+                            ["Redmine URL"]
+                            [(text
+                               :id :api-url
+                               :columns 25 
+                               :multi-line? false) "wrap"]
+                            [(checkbox :id :check-connection
+                                       :text "Check connection")]
+                            [(flow-panel :align :right 
+                                         :items [ok-act cancel-act]) "growx, spanx 2" "alignx right"]]))
+     pack!
+     show!)))
+
 (def red-jem-frame
   (frame
     :title "Obelisk"
     :id :red-jem
     :on-close :hide
     :content (border-panel 
-               :vgap 5
-               :north (toolbar 
-                        :floatable? false
-                        :items [(button 
-                                  :id :save-button
-                                  :text "Save")
-                                :separator
-                                ;(button
-                                ;  :id :import-button
-                                ;  :text "Import")
-                                [:fill-h 5]
-                                (button
-                                  :id :go-to-button
-                                  :text "Go to ...")])
+               :north (border-panel 
+                        :west (horizontal-panel
+                                :items [(button 
+                                          :id :save-button
+                                          :text "Save")
+                                        (button
+                                          :id :go-to-button
+                                          :text "Go to ...")])
+                        :east (horizontal-panel
+                                :items [(button
+                                          :id :config-button
+                                          :icon (clojure.java.io/resource "gear.png"))
+                                        [:fill-h 5]]))
                :center scrollable-area)))
+
+
 
 (def options-ok-btn
   (button :text "Continue"
@@ -153,6 +194,9 @@
                          :id :go-to-project-button
                          :text "Go")])))
 
+(defn config-button-handler [e]
+  (open-config-dialog red-jem-frame))
+
 (defn go-to-feature-button-handler [event]
   (config! 
     (select projects-frame [:#go-to-projects-lb])
@@ -170,6 +214,9 @@
 (-> red-jem-frame pack! show!)
 
 (load "events")
+
+(listen (select red-jem-frame ["#config-button"]) :action 
+        config-button-handler)
 
 (map-key area "control R"
   ; Read in the subject of this ticket #

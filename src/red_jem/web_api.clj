@@ -62,7 +62,7 @@
      :as :json
      :throw-entire-message? true}))
 
-(defn valid-token? []
+(defn valid-token? [api-token]
   "Make a request using the token provided, expect 200"
   (let [response (client/get "http://redmine.visiontree.com/users/current.json" 
                                   {:basic-auth [api-token "d"]
