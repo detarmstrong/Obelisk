@@ -14,8 +14,6 @@
 
 (def api-token)
 
-(def redditor "http://static.reddit.com/reddit.com.header.png")
-
 (def area (text :multi-line? true
                             :text ""
                             :wrap-lines? true))
@@ -160,8 +158,6 @@
                                           :icon (clojure.java.io/resource "gear.png"))
                                         [:fill-h 5]]))
                :center scrollable-area)))
-
-
 
 (def options-ok-btn
   (button :text "Continue"
