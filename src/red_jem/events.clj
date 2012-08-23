@@ -32,10 +32,11 @@
   )
 
 (defn on-project-selected [event]  
-  ; load members for project
   (if-let [selected-project-id (:id (selection projects-lb))]
-    (config! members-lb :model (map get-project-member 
-                                  (web-api/project-members selected-project-id)))
+    (let [project-members-response (web-api/project-members selected-project-id)
+          project-members-as-map (map get-project-member project-members-response)
+          project-members-as-map (sort-by :name project-members-as-map)]
+      (config! members-lb :model project-members-as-map))
     (print "no project selection")))
 
 (defn on-project-member-selected [event]
