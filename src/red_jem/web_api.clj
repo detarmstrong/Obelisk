@@ -56,7 +56,7 @@
                                      :assigned_to_id member-id
                                      :parent_issue_id parent-issue-id}})
      :content-type :json
-     :socket-timeout 8000
+     :socket-timeout 9000
      :conn-timeout 8000
      :accept :json
      :as :json
@@ -67,5 +67,7 @@
   (let [response (client/get "http://redmine.visiontree.com/users/current.json" 
                                   {:basic-auth [api-token "d"]
                                    :as :json
+                                   :socket-timeout 9000
+                                   :conn-timeout 8000
                                    :throw-exceptions false})]
     (= 200 (:status response))))
