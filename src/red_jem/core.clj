@@ -118,7 +118,7 @@
                                 (do 
                                   (return-from-dialog e values)))
                               (spit web-api/obelisk-token-file-path api-key)
-                            (web-api/load-token))))
+                              (web-api/load-token))))
         cancel-act (action
                      :name "Cancel"
                      :handler (fn [e] (return-from-dialog e nil)))
