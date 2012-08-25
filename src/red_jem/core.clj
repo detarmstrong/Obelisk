@@ -15,8 +15,9 @@
 (def api-token)
 
 (def area (text :multi-line? true
-                            :text ""
-                            :wrap-lines? true))
+                :text ""
+                :wrap-lines? true
+                :tab-size 2))
 
 (def scrollable-area (scrollable area 
                              :size [300 :by 350]
@@ -106,15 +107,22 @@
   (let [ok-act (action
                  :name "Ok"
                  :handler (fn [e]
-                            (let [values (value (to-frame e))]
-                              (if (:check-connection values)
-                                (alert 
-                                  (str "Test result: " 
-                                       (web-api/valid-token? (:api-key values)))))
-                              (return-from-dialog e values))))
+                            (let [values (value (to-frame e))
+                                  api-key (:api-key values)
+                                  check-connection? (:check-connection values)]
+                              (if check-connection?
+                                (let [passed-test (valid-token? api-key)]
+                                  (do 
+                                    (alert (str "Is token valid? " passed-test))
+                                    (return-from-dialog e values)))
+                                (do 
+                                  (return-from-dialog e values)))
+                              (spit web-api/obelisk-token-file-path api-key)
+                            (web-api/load-token))))
         cancel-act (action
                      :name "Cancel"
-                     :handler (fn [e] (return-from-dialog e nil)))]
+                     :handler (fn [e] (return-from-dialog e nil)))
+        api-key (slurp web-api/obelisk-token-file-path)]
     (-> (custom-dialog
          :title "Config"
          :parent parent-frame
@@ -124,17 +132,19 @@
                     :items [["Redmine API key"]
                             [(text
                                :id :api-key
+                               :text api-key
                                :columns 25 
                                :multi-line? false) "wrap"]
                             ["Redmine URL"]
                             [(text
                                :id :api-url
-                               :columns 25 
+                               :columns 25
                                :multi-line? false) "wrap"]
                             [(checkbox :id :check-connection
-                                       :text "Check connection")]
+                                       :text "Check connection"
+                                       :selected? true)]
                             [(flow-panel :align :right 
-                                         :items [ok-act cancel-act]) "growx, spanx 2" "alignx right"]]))
+                                         :items [cancel-act ok-act]) "growx, spanx 2" "alignx right"]]))
      pack!
      show!)))
 
@@ -307,10 +317,10 @@
         
     (-> options-frame hide!)))
 
-(defn valid-token? []
-  (try (web-api/valid-token?)
-    (catch java.net.ConnectException e 
-      (alert "Connection timed out. On VPN?"))))
+(defn valid-token? [api-key]
+  (try (web-api/valid-token? api-key)
+    (catch org.apache.http.conn.ConnectTimeoutException e 
+      (do (alert "Connection timed out. On VPN?") false))))
 
 (defn init-red-jem  []
   ; test for note file
@@ -320,8 +330,8 @@
   
   (if (web-api/token?)
     (web-api/load-token)
-    (alert (str "Redmine api token not found.\n\nCreate a file called " 
-                web-api/obelisk-token-file-path 
-                " and paste token found under you account settings."))))
+    (do 
+      (spit web-api/obelisk-token-file-path "")
+      (config-button-handler nil))))
 
 (init-red-jem)
