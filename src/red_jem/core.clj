@@ -5,6 +5,7 @@
   (:use [clj-http.util :only (url-encode)])
   (:use [seesaw core mig])
   (:use seesaw.keymap)
+  (:use [red-jem.at-at :as at-at])
   (:use [clojure.string :only (join lower-case)])
   (:import (java.awt Desktop) 
            (java.net URI)
@@ -12,12 +13,31 @@
 
 (native!)
 
+(declare valid-token?)
+
+(def at-at-pool (mk-pool))
+
 (def api-token)
 
 (def area (text :multi-line? true
                 :text ""
                 :wrap-lines? true
                 :tab-size 2))
+
+(def obelisk-note-file
+  (let [dot-file ".obelisk"
+        home-dir (System/getProperty "user.home")
+        file-separator (System/getProperty "file.separator")
+        full-path (apply str (interpose file-separator [home-dir dot-file]))]
+    (io/file full-path)))
+
+(defn load-or-create-note-file []
+  (if (-> obelisk-note-file (.isFile))
+    (text! area (slurp obelisk-note-file))
+    (spit obelisk-note-file "")))
+
+(defn save-note-file []
+  (spit obelisk-note-file (text area)))
 
 (def scrollable-area (scrollable area 
                              :size [300 :by 350]
@@ -135,11 +155,11 @@
                                :text api-key
                                :columns 25 
                                :multi-line? false) "wrap"]
-                            ["Redmine URL"]
-                            [(text
-                               :id :api-url
-                               :columns 25
-                               :multi-line? false) "wrap"]
+                            ;["Redmine URL"]
+                            ;[(text
+                            ;   :id :api-url
+                            ;   :columns 25
+                            ;   :multi-line? false) "wrap"]
                             [(checkbox :id :check-connection
                                        :text "Check connection"
                                        :selected? true)]
@@ -156,10 +176,7 @@
     :content (border-panel 
                :north (border-panel 
                         :west (horizontal-panel
-                                :items [(button 
-                                          :id :save-button
-                                          :text "Save")
-                                        (button
+                                :items [(button
                                           :id :go-to-button
                                           :text "Go to ...")])
                         :east (horizontal-panel
@@ -251,11 +268,6 @@
                                  [:#go-to-projects-lb])))))
     (-> projects-frame hide!)))
 
-(listen (select red-jem-frame [:#save-button]) :action
-  (fn [e]
-    (print "save clicked")
-    (spit ".obelisk" (config area :text))))
-
 (listen projects-lb :mouse-clicked
   (fn [e]
     (def project-keys-log [])
@@ -294,7 +306,7 @@
   (fn [e]
     (handle-event on-project-member-selected)))
 
-(listen options-ok-btn :mouse-clicked
+(listen options-ok-btn :action
   (fn [e]
     (let [project-id (:id (selection projects-lb))
           member-id (:id (selection members-lb))
@@ -317,16 +329,29 @@
         
     (-> options-frame hide!)))
 
+(declare save-countdown)
+(defn set-area-doc-listener [] 
+  (def area-doc-listener 
+	  (listen area #{:remove-update :insert-update} 
+	          ; set a countdown for 5 seconds
+	          ; cancel existing timer doc change
+           
+	    (fn [e]
+        (at-at/stop save-countdown)
+	      (def save-countdown 
+         (at-at/after 
+           5000 
+           #(save-note-file)
+           at-at-pool))))))
+
 (defn valid-token? [api-key]
   (try (web-api/valid-token? api-key)
     (catch org.apache.http.conn.ConnectTimeoutException e 
       (do (alert "Connection timed out. On VPN?") false))))
 
 (defn init-red-jem  []
-  ; test for note file
-  (if (-> (io/file ".obelisk") (.isFile))
-    (text! area (slurp ".obelisk"))
-    (spit ".obelisk" ""))
+  (load-or-create-note-file)
+  (set-area-doc-listener)
   
   (if (web-api/token?)
     (web-api/load-token)
