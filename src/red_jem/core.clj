@@ -333,9 +333,6 @@
 (defn set-area-doc-listener [] 
   (def area-doc-listener 
 	  (listen area #{:remove-update :insert-update} 
-	          ; set a countdown for 5 seconds
-	          ; cancel existing timer doc change
-           
 	    (fn [e]
         (at-at/stop save-countdown)
 	      (def save-countdown 
