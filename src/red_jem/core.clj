@@ -1,15 +1,17 @@
 (ns red-jem.core
   (:gen-class) ; required for uberjar
-  (:require [red-jem.web-api :as web-api])
-  (:require [clojure.java.io :as io])
-  (:use [clj-http.util :only (url-encode)])
   (:use [seesaw core mig])
+  (:require [red-jem.web-api :as web-api]
+            [clojure.java.io :as io]
+            [seesaw.rsyntax :as rsyntax])
+  (:use [clj-http.util :only (url-encode)])
   (:use seesaw.keymap)
   (:use [red-jem.at-at :as at-at])
   (:use [clojure.string :only (join lower-case)])
-  (:import (java.awt Desktop) 
+  (:import (java.awt Desktop)
            (java.net URI)
-           (java.awt Color)))
+           (java.awt Color)
+           javax.swing.text.DefaultHighlighter$DefaultHighlightPainter))
 
 (native!)
 
@@ -19,10 +21,11 @@
 
 (def api-token)
 
-(def area (text :multi-line? true
+(def area (rsyntax/text-area
                 :text ""
                 :wrap-lines? true
-                :tab-size 2))
+                :tab-size 2
+                :syntax :none))
 
 (def obelisk-note-file
   (let [dot-file ".obelisk"
@@ -172,8 +175,10 @@
   (frame
     :title "Obelisk"
     :id :red-jem
-    :on-close :hide
-    :content (border-panel 
+    :on-close :exit
+    :icon "gear.png"
+    :content (border-panel
+               :id :red-jem-border-panel
                :north (border-panel 
                         :west (horizontal-panel
                                 :items [(button
@@ -183,7 +188,19 @@
                                 :items [(button
                                           :id :config-button
                                           :icon (clojure.java.io/resource "gear.png"))
-                                        [:fill-h 5]]))
+                                        [:fill-h 5]])
+                        :south (horizontal-panel
+                                 :opaque? false
+                                 :id :search-panel
+                                 :visible? false
+                                 :items [" "
+                                         "Find" 
+                                         (text 
+                                           :id :search-text-field)
+                                         (button
+                                           :id :close-search
+                                           :icon (clojure.java.io/resource "close-button.png"))
+                                         " "]))
                :center scrollable-area)))
 
 (def options-ok-btn
@@ -257,6 +274,11 @@
   (fn [widget]
     (handle-event on-create-ticket-form-visible)))
 
+(map-key area "control F"
+         (fn [widget]
+           (config! (select red-jem-frame [:#search-panel]) :visible? true)
+           (request-focus! (select red-jem-frame [:#search-text-field]))))
+
 (listen (select red-jem-frame [:#go-to-button]) :action 
         go-to-feature-button-handler)
 
@@ -272,6 +294,10 @@
   (fn [e]
     (def project-keys-log [])
     (handle-event on-project-selected)))
+
+(listen (select red-jem-frame [:#close-search]) :action
+        (fn [e]
+          (config! (select (to-root e) [:#search-panel]) :visible? false)))
 
 (def project-keys-log [])
 
@@ -346,9 +372,32 @@
     (catch org.apache.http.conn.ConnectTimeoutException e 
       (do (alert "Connection timed out. On VPN?") false))))
 
+(defn re-pos [re s]
+  (loop [m (re-matcher re s)
+         res []]
+    (if (.find m)
+      (recur m (conj res [(.start m) (.end m)]))
+      res)))
+
+(defn highlight-matching-text [search-string textarea]
+  (let [text (text textarea)
+        positions (re-pos (re-pattern search-string) text)
+        highlight-painter (new DefaultHighlighter$DefaultHighlightPainter Color/BLUE)
+        highlighter (.getHighlighter textarea)]
+    ;TODO highlight for each matched [start end]
+    (doseq [pos positions]
+            (doto
+              highlighter
+              (.addHighlight
+                (first pos) (second pos) 
+                highlight-painter)))))
+  
 (defn init-red-jem  []
   (load-or-create-note-file)
   (set-area-doc-listener)
+  
+  ; setting :border on the button doesn't work :(
+  (config! (select red-jem-frame [:#close-search]) :border nil)
   
   (if (web-api/token?)
     (web-api/load-token)
