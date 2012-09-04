@@ -16,6 +16,7 @@
 (native!)
 
 (declare valid-token?)
+(declare highlight-matching-text)
 
 (def at-at-pool (mk-pool))
 
@@ -297,7 +298,16 @@
 
 (listen (select red-jem-frame [:#close-search]) :action
         (fn [e]
+          (let [highlighter (.getHighlighter area)
+                highlights (.getHighlights highlighter)]
+            (doseq [highlight highlights]
+              (doto highlighter
+                (.removeHighlight highlight))))
           (config! (select (to-root e) [:#search-panel]) :visible? false)))
+
+(def text-search-listener (listen (select red-jem-frame [:#search-text-field]) #{:remove-update :insert-update}
+        (fn [e]
+          (highlight-matching-text (text e) area))))
 
 (def project-keys-log [])
 
@@ -381,16 +391,22 @@
 
 (defn highlight-matching-text [search-string textarea]
   (let [text (text textarea)
-        positions (re-pos (re-pattern search-string) text)
+        positions (re-pos (re-pattern (str "(?i)" search-string)) text)
         highlight-painter (new DefaultHighlighter$DefaultHighlightPainter Color/BLUE)
-        highlighter (.getHighlighter textarea)]
-    ;TODO highlight for each matched [start end]
+        highlighter (.getHighlighter textarea)
+        highlights (.getHighlights highlighter)]
+
+    (doseq [highlight highlights]
+      (doto highlighter
+        (.removeHighlight highlight)))
+    
     (doseq [pos positions]
-            (doto
-              highlighter
-              (.addHighlight
-                (first pos) (second pos) 
-                highlight-painter)))))
+      (if-not (= search-string "")
+        (doto
+          highlighter
+          (.addHighlight
+            (first pos) (second pos) 
+            highlight-painter))))))
   
 (defn init-red-jem  []
   (load-or-create-note-file)
