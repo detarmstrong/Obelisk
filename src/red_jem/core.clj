@@ -307,7 +307,10 @@
 
 (def text-search-listener (listen (select red-jem-frame [:#search-text-field]) #{:remove-update :insert-update}
         (fn [e]
-          (highlight-matching-text (text e) area))))
+          (try
+            (highlight-matching-text (text e) area)
+            (catch java.util.regex.PatternSyntaxException e
+              (print "invalid regex"))))))
 
 (def project-keys-log [])
 
