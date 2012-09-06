@@ -252,7 +252,8 @@
      pack!
      show!)))
 
-(-> red-jem-frame pack! show!)
+; comment out during uberjaring
+; (-> red-jem-frame pack! show!)
 
 (load "events")
 
