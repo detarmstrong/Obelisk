@@ -325,11 +325,15 @@
                 keyed-code (.getKeyCode e)
                 count-keys-entered (count project-keys-log)
                 projects-model (.toArray (.getModel projects-lb))]
+            
             (if (and (= keyed-code 8) (> count-keys-entered 0)) ; 8 = backspace
               (def project-keys-log 
                 (subvec project-keys-log 0 (- count-keys-entered 1)))
               (def project-keys-log 
                 (conj project-keys-log keyed)))
+            
+            (if (= keyed-code 27) ; 27 = escape
+              (def project-keys-log []))
             
             (if-let [search-on (first
                                  (filter (fn [x] 
