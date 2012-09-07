@@ -22,6 +22,9 @@
 
 (def api-token)
 
+(def highlight-color
+  Color/cyan)
+
 (def area (rsyntax/text-area
                 :text ""
                 :wrap-lines? true
@@ -252,8 +255,8 @@
      pack!
      show!)))
 
-; comment out during uberjaring
-; (-> red-jem-frame pack! show!)
+; commenting out during uberjaring causes the ubarjaring to break
+(-> red-jem-frame pack! show!)
 
 (load "events")
 
@@ -396,7 +399,7 @@
 (defn highlight-matching-text [search-string textarea]
   (let [text (text textarea)
         positions (re-pos (re-pattern (str "(?i)" search-string)) text)
-        highlight-painter (new DefaultHighlighter$DefaultHighlightPainter Color/BLUE)
+        highlight-painter (new DefaultHighlighter$DefaultHighlightPainter highlight-color)
         highlighter (.getHighlighter textarea)
         highlights (.getHighlights highlighter)]
 
