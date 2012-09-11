@@ -31,7 +31,7 @@
   ; next state is project selection
   )
 
-(defn on-project-selected [event]  
+(defn on-project-selected [event]
   (if-let [selected-project-id (:id (selection projects-lb))]
     (let [project-members-response (web-api/project-members selected-project-id)
           project-members-as-map (map get-project-member project-members-response)
