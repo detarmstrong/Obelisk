@@ -352,13 +352,12 @@ is key"
         count-keys-entered ((key-log :count))
         current-selection (selection $listbox)]
     
-    (if (= keyed-code (KeyEvent/VK_ESCAPE))
-      (do (alert "escape")
-        ((key-log :truncate!))))
-    
     (if (and (= keyed-code (KeyEvent/VK_BACK_SPACE)) (> count-keys-entered 0))
       ((key-log :pop!))
       ((key-log :push!) keyed))
+    
+    (if (= keyed-code (KeyEvent/VK_ESCAPE))
+        ((key-log :truncate!)))
     
     (if-let [search-on (first
                          (filter (fn [x] 
