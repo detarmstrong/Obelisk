@@ -9,14 +9,16 @@
   (:use [red-jem.at-at :as at-at])
   (:use [clojure.string :only (join lower-case)])
   (:import (java.awt Desktop)
-           (java.net URI)
            (java.awt Color)
+           (java.awt.event KeyEvent)
+           (java.net URI)
            javax.swing.text.DefaultHighlighter$DefaultHighlightPainter))
 
 (native!)
 
 (declare valid-token?)
 (declare highlight-matching-text)
+(declare key-logs)
 
 (def at-at-pool (mk-pool))
 
@@ -234,14 +236,24 @@
                :items [(scrollable (listbox
                                      :id :go-to-projects-lb
                                      :renderer list-renderer))
-                       (button
-                         :id :go-to-project-button
-                         :text "Go")])))
+                       (action
+                         :name "Go"
+                         :handler (fn [e] 
+                                   (open-url-on-desktop
+                                     (str "http://redmine.visiontree.com/projects/" 
+                                          (:id (selection (select projects-frame
+                                                                  [:#go-to-projects-lb])))))
+                                   (-> projects-frame hide!)))])))
 
 (defn config-button-handler [e]
   (open-config-dialog red-jem-frame))
 
 (defn go-to-feature-button-handler [event]
+  (let [widge (select projects-frame [:#go-to-projects-lb])
+        key-log (get-in key-logs [widge])]
+    (request-focus! widge)
+    ((key-log :truncate!)))
+  
   (config! 
     (select projects-frame [:#go-to-projects-lb])
     :model (projects-listbox-model))
@@ -287,18 +299,15 @@
 (listen (select red-jem-frame [:#go-to-button]) :action 
         go-to-feature-button-handler)
 
-(listen (select projects-frame [:#go-to-project-button]) :action 
-  (fn [e] 
-    (open-url-on-desktop
-      (str "http://redmine.visiontree.com/projects/" 
-         (:id (selection (select projects-frame
-                                 [:#go-to-projects-lb])))))
-    (-> projects-frame hide!)))
+(listen projects-lb :selection
+  (fn [e]
+    (if-not (.getValueIsAdjusting (to-widget e))
+      (handle-event on-project-selected))))
 
 (listen projects-lb :mouse-clicked
-  (fn [e]
-    (def project-keys-log [])
-    (handle-event on-project-selected)))
+        (fn [e]
+          (let [key-log (get-in key-logs [(to-widget e)])]
+            ((key-log :truncate!)))))
 
 (listen (select red-jem-frame [:#close-search]) :action
         (fn [e]
@@ -316,42 +325,82 @@
             (catch java.util.regex.PatternSyntaxException e
               (print "invalid regex"))))))
 
-(def project-keys-log [])
+; closure time!
+(defn make-key-log [init-val]
+  (let [c (atom init-val)]
+    {:push! #(reset! c (conj @c %))
+     :pop! #(reset! c (subvec @c 0 (- (count @c) 1)))
+     :truncate! #(reset! c [])
+     :count #(count @c)
+     :as-string #(apply str @c)}))
+
+(def key-logs
+  "array of vectors - each vector is a stack of keys pressed while a listbox has focus. lb widget
+is key"
+  {projects-lb (make-key-log [])
+   members-lb (make-key-log [])
+   (select projects-frame [:#go-to-projects-lb]) (make-key-log [])})
+
+(defn on-lb-key-up
+  "Generic key listener for listbox. Select as you type."
+  [e]
+  (let [$listbox (to-widget e)
+        keyed (str (.getKeyChar e))
+        keyed-code (.getKeyCode e)
+        listbox-model (.toArray (.getModel $listbox))
+        key-log (get-in key-logs [$listbox])
+        count-keys-entered ((key-log :count))
+        current-selection (selection $listbox)]
+    
+    (if (= keyed-code (KeyEvent/VK_ESCAPE))
+      (do (alert "escape")
+        ((key-log :truncate!))))
+    
+    (if (and (= keyed-code (KeyEvent/VK_BACK_SPACE)) (> count-keys-entered 0))
+      ((key-log :pop!))
+      ((key-log :push!) keyed))
+    
+    (if-let [search-on (first
+                         (filter (fn [x] 
+                                   (re-seq 
+                                     (re-pattern 
+                                       (str "(?i)^" 
+                                            ((key-log :as-string))))
+                                     (:name x)))
+                                 listbox-model))]
+      (if-not (= search-on current-selection)
+        (do (selection! $listbox search-on)
+          (scroll! $listbox :to [:row (.getSelectedIndex $listbox)])))
+      0)))
 
 (def projects-lb-key-listener 
   (listen projects-lb :key-pressed
+        on-lb-key-up))
+
+(def go-to-project-lb-key-listener
+  (listen (select projects-frame [:#go-to-projects-lb]) :key-pressed
+          on-lb-key-up))
+
+(def go-to-project-lb-selection-listener
+  (listen (select projects-frame [:#go-to-projects-lb]) :selection
+          (fn [e]
+            (if-let [selected (selection e)]
+              (if-not (.getValueIsAdjusting (to-widget e))
+                (print "Selection updated"))))))
+
+(listen (select projects-frame [:#go-to-projects-lb]) :mouse-clicked
         (fn [e]
-          (let [keyed (str (.getKeyChar e))
-                keyed-code (.getKeyCode e)
-                count-keys-entered (count project-keys-log)
-                projects-model (.toArray (.getModel projects-lb))]
-            
-            (if (and (= keyed-code 8) (> count-keys-entered 0)) ; 8 = backspace
-              (def project-keys-log 
-                (subvec project-keys-log 0 (- count-keys-entered 1)))
-              (def project-keys-log 
-                (conj project-keys-log keyed)))
-            
-            (if (= keyed-code 27) ; 27 = escape
-              (def project-keys-log []))
-            
-            (if-let [search-on (first
-                                 (filter (fn [x] 
-                                           (re-seq 
-                                             (re-pattern 
-                                               (str "(?i)^" 
-                                                    (apply str project-keys-log))) 
-                                             (:name x)))
-                                         projects-model))]
-              (do (selection! projects-lb search-on)
-                (scroll! projects-lb :to [:row (.getSelectedIndex projects-lb)]))
-              0)
-            
-            (handle-event on-project-selected)))))
+          (let [key-log (get-in key-logs [(to-widget e)])]
+            ((key-log :truncate!)))))
 
 (listen members-lb :selection
   (fn [e]
-    (handle-event on-project-member-selected)))
+    (if-not (.getValueIsAdjusting (to-widget e))
+      (handle-event on-project-member-selected))))
+
+(def members-lb-key-listener
+  (listen members-lb :key-pressed
+          on-lb-key-up))
 
 (listen options-ok-btn :action
   (fn [e]
