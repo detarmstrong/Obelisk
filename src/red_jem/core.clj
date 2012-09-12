@@ -289,7 +289,7 @@
 (map-key area "control T"
   ; Ticket this
   (fn [widget]
-    (handle-event on-create-ticket-form-visible)))
+    (on-create-ticket-form-visible widget)))
 
 (map-key area "control F"
          (fn [widget]
@@ -360,7 +360,7 @@ is key"
     (if (= keyed-code (KeyEvent/VK_ESCAPE))
         ((key-log :truncate!)))
     
-    (if-let [search-on (first
+    (when-let [search-on (first
                          (filter (fn [x] 
                                    (re-seq 
                                      (re-pattern 
@@ -370,8 +370,7 @@ is key"
                                  listbox-model))]
       (if-not (= search-on current-selection)
         (do (selection! $listbox search-on)
-          (scroll! $listbox :to [:row (.getSelectedIndex $listbox)])))
-      0)))
+          (scroll! $listbox :to [:row (.getSelectedIndex $listbox)]))))))
 
 (def projects-lb-key-listener 
   (listen projects-lb :key-pressed
@@ -422,7 +421,13 @@ is key"
                      response
                      [:body :issue :id])]
         (insert-new-issue-id issue-id selected-text-start area))
-        
+    
+    ; clear key logs
+    (let [projects-key-log (get-in key-logs [projects-lb])
+          members-key-log (get-in key-logs [members-lb])]
+      ((projects-key-log :truncate!))
+      ((members-key-log :truncate!)))
+    
     (-> options-frame hide!)))
 
 (declare save-countdown)
