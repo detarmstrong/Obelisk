@@ -14,3 +14,9 @@ pom.xml
 /.settings
 
 .settings/ccw.repl.cmdhistory.prefs
+
+.obelisk
+
+.obelisk_rm_token
+
+.obelisk_rm_token_tmp
