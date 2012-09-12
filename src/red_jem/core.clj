@@ -62,7 +62,11 @@
 (def projects-lb (listbox :renderer list-renderer))
 
 (defn get-project-member [{:keys [user]}]
-  {:name (get-in user [:name]) :id (get-in user [:id])})
+  (let [name (get-in user [:name])
+        id (get-in user [:id])]
+    (if-not (= name nil)
+      {:name name :id id}
+      {:name "unknown" :id -1})))
 
 (defn get-project [{:keys [name identifier]}]
   {:name name :id identifier})
