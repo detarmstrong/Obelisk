@@ -225,7 +225,7 @@
     :title "Pick"
     :id :options-frame
     :on-close :hide
-    :size [728 :by 230]))
+    :size [728 :by 250]))
 
 (def projects-frame
   (frame
