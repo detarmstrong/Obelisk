@@ -14,10 +14,12 @@
 
 
 ;Action transition functions
-(defn on-create-ticket-form-visible [event]
+(defn on-create-ticket-form-visible [widget]
   ; only state is inactive
   ; show picker frame
   (-> options-frame show!) ; not calling pack! because it negates size setting
+  
+  (request-focus! widget)
   
   ; disable save button
   (config! options-ok-btn :enabled? false)

@@ -352,8 +352,9 @@ is key"
         count-keys-entered ((key-log :count))
         current-selection (selection $listbox)]
     
-    (if (and (= keyed-code (KeyEvent/VK_BACK_SPACE)) (> count-keys-entered 0))
-      ((key-log :pop!))
+    (if (= keyed-code (KeyEvent/VK_BACK_SPACE))
+      (if (> count-keys-entered 0)
+        ((key-log :pop!)))
       ((key-log :push!) keyed))
     
     (if (= keyed-code (KeyEvent/VK_ESCAPE))
