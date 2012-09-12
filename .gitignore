@@ -12,3 +12,5 @@ pom.xml
 /.classpath
 /bin
 /.settings
+
+.settings/ccw.repl.cmdhistory.prefs
