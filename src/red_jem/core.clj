@@ -251,7 +251,6 @@
 (defn go-to-feature-button-handler [event]
   (let [widge (select projects-frame [:#go-to-projects-lb])
         key-log (get-in key-logs [widge])]
-    (request-focus! widge)
     ((key-log :truncate!)))
   
   (config! 
@@ -271,6 +270,14 @@
 (-> red-jem-frame pack! show!)
 
 (load "events")
+
+(listen options-frame :window-closing
+        (fn [e]
+          (let [projects-key-log (get-in key-logs [projects-lb])
+                members-key-log (get-in key-logs [members-lb])]
+            ((projects-key-log :truncate!))
+            ((members-key-log :truncate!)))
+          (request-focus! projects-lb)))
 
 (listen (select red-jem-frame ["#config-button"]) :action 
         config-button-handler)
