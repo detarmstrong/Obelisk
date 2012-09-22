@@ -5,6 +5,7 @@
             [clojure.java.io :as io]
             [seesaw.rsyntax :as rsyntax])
   (:use [clj-http.util :only (url-encode)])
+  (:use clojure.core.memoize)
   (:use seesaw.keymap)
   (:use [red-jem.at-at :as at-at])
   (:use [clojure.string :only (join lower-case)])
@@ -71,8 +72,9 @@
 (defn get-project [{:keys [name identifier]}]
   {:name name :id identifier})
 
+(def memoized-projects (memo web-api/projects))
 (defn projects-listbox-model []
-  (map get-project (web-api/projects)))
+  (map get-project (memoized-projects)))
 
 (defn get-selected-text [text-widget]
   (let [rang (selection text-widget)]

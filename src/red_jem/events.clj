@@ -6,6 +6,7 @@
 (def initial-state "inactive")
 (def current-state initial-state)
 (def current-project-id "nothing")
+(def memoized-project-members (memo web-api/project-members))
 
 (defn handle-event [event-fn]
   ; for the current state, call transition to next state
@@ -35,7 +36,7 @@
 
 (defn on-project-selected [event]
   (if-let [selected-project-id (:id (selection projects-lb))]
-    (let [project-members-response (web-api/project-members selected-project-id)
+    (let [project-members-response (memoized-project-members selected-project-id)
           project-members-as-map (map get-project-member project-members-response)
           project-members-as-map (sort-by :name project-members-as-map)]
       (config! members-lb :model project-members-as-map))
