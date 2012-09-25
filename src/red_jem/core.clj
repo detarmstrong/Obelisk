@@ -1,14 +1,14 @@
 (ns red-jem.core
   (:gen-class) ; required for uberjar
-  (:use [seesaw core mig])
   (:require [red-jem.web-api :as web-api]
             [clojure.java.io :as io]
             [seesaw.rsyntax :as rsyntax])
-  (:use [clj-http.util :only (url-encode)])
   (:use clojure.core.memoize)
   (:use seesaw.keymap)
+  (:use [seesaw core mig])
+  (:use [clj-http.util :only (url-encode)])
   (:use [red-jem.at-at :as at-at])
-  (:use [clojure.string :only (join lower-case)])
+  (:use [clojure.string :only (join lower-case trim)])
   (:import (java.awt Desktop)
            (java.awt Color)
            (java.awt.event KeyEvent)
