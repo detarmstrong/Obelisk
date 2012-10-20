@@ -189,7 +189,7 @@
     :title "Obelisk"
     :id :red-jem
     :on-close :exit
-    :icon "gear.png"
+    :icon "obelisk_icon.png"
     :content (border-panel
                :id :red-jem-border-panel
                :north (border-panel 
