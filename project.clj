@@ -4,7 +4,8 @@
                   [seesaw "1.4.2"]
                   [cheshire "4.0.0"]
                   [clj-http "0.4.1"]
-                  [org.clojure/core.memoize "0.5.2"]]
+                  [org.clojure/core.memoize "0.5.2"]
+                  [org.clojure/tools.trace "0.7.3"]]
   :main red_jem.core
   :jvm-opts ["-Xdock:name=Obelisk"]) ; this doesn't work consistently
 
