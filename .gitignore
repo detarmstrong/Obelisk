@@ -22,3 +22,5 @@ pom.xml
 .obelisk_rm_token_tmp
 
 test.txt
+
+*.out
