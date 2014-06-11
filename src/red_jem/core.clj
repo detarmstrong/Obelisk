@@ -9,7 +9,6 @@
   (:use [clj-http.util :only (url-encode)])
   (:use [red-jem.at-at :as at-at])
   (:use [clojure.string :only (join lower-case trim)])
-  ;(:use red-jem.virtual-tree)
   (:import (java.awt Desktop)
            (java.awt Color)
            (java.awt.event KeyEvent)
@@ -303,14 +302,7 @@
 (map-key area "control T"
   ; Ticket this
   (fn [widget]
-    ; iterate through selection lines
-    ; for each tab char, this is a nested ticket
-    ;(let [selected-text (get-selected-text area)
-    ;      text-seq (seq (.split #"\n" selected-text))]
-    ;  (make-tree-data-from-lines text-seq))
     (on-create-ticket-form-visible widget)))
-
-
 
 (map-key area "control F"
          (fn [widget]

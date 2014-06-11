@@ -19,8 +19,10 @@
   ; only state is inactive
   ; show picker frame
   (-> options-frame show!) ; not calling pack! because it negates size setting
-  
+
   (request-focus! widget)
+  ;(spit "console.out" (vtree/parse (get-selected-text widget)))
+  ;(spit "console.out" "\n")
   
   ; disable save button
   (config! options-ok-btn :enabled? false)
