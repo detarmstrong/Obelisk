@@ -8,7 +8,7 @@
   (:use [seesaw core mig])
   (:use [clj-http.util :only (url-encode)])
   (:use [red-jem.at-at :as at-at])
-  (:use [clojure.string :only (join lower-case trim)])
+  (:use [clojure.string :only (join lower-case trim trimr split-lines)])
   (:import (java.awt Desktop)
            (java.awt Color)
            (java.awt.event KeyEvent)
@@ -59,7 +59,8 @@
            [:text (str (:name v))])))
 
 
-(def members-lb (listbox :renderer list-renderer))
+(def members-lb (combobox :renderer list-renderer
+                          :size [200 :by 22]))
 (def projects-lb (listbox :renderer list-renderer))
 
 (defn get-project-member [{:keys [user]}]
@@ -216,22 +217,29 @@
                :center scrollable-area)))
 
 (def options-ok-btn
-  (button :text "Continue"
-                    :margin 10))
+  (button :text "Finish"
+                    :margin 6))
 
 (def options-panel
-  (scrollable (horizontal-panel 
-    :class :hp 
-    :items [(scrollable projects-lb) 
-            (scrollable members-lb)
-             options-ok-btn])))
+  (vertical-panel :items [(horizontal-panel 
+                             :class :hp 
+                             :items [(vertical-panel :items [(scrollable projects-lb
+                                                                         :size [300 :by 400])
+                                                             :fill-v])
+            
+                                     (vertical-panel :id :members-panel  
+                                                     :items [])
+                                     (vertical-panel :id :lines-panel 
+                                                     :items [])
+                                             :fill-h])
+                          (horizontal-panel :items [options-ok-btn])]))
 
 (def options-frame
   (frame
-    :title "Pick"
+    :title "Assign"
     :id :options-frame
     :on-close :hide
-    :size [728 :by 250]))
+    :size [930 :by 450]))
 
 (def projects-frame
   (frame
@@ -420,7 +428,7 @@ is key"
           member-id (:id (selection members-lb))
           selected-text (get-selected-text area)
           selected-text-start (first (selection area))
-          text-seq (seq (.split #"\n" selected-text))
+          text-seq (seq (split-lines selected-text))
           subject (first text-seq)
           body (rest text-seq)
           parent-issue-id ""
