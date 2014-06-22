@@ -1,0 +1,6 @@
+hierarchy
+  child 1
+  child 2
+    child 2.1
+  child 3
+    child 3.1

@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<task subject="Ticket tree"
+  id="12"
+  description="testing this syntax where description lines are\nstarted with double quote">
+  <task subject="Already ticketed - improve performance on the ssd" id="7832"
+    description="(whitespace after the // is optional) It can't be too fast!"/>
+  <task subject="rewrite the whole thing"
+    description="Indented comment for line above.\nSecond line for comment must not be dedented from comment line above. Rewrite will be profitable and fun &quot;he said&quot;">
+    <task subject="rewrite subpart 1"/>
+  </task>
+  <task subject="another subtask">
+    <task subject="another sub subtask"/>
+  </task>
+</task>
+

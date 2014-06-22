@@ -1,0 +1,10 @@
+<ticket subject="hierarchy" description="This is the description here.">
+  <ticket subject="child 1" parent-id="90"/>
+  <ticket subject="child 2">
+    <ticket subject="child 2.1" description="another desc"/>
+  </ticket>
+  <ticket subject="child 3">
+    <ticket subject="child 3.1"/>
+  </ticket>
+</ticket>
+
