@@ -5,9 +5,6 @@
 
 (declare find-by-subject)
 
-(defn sample-text []
-  (slurp "resources/sample-raw-text"))
-
 ;===== stackoverflow answer tree parser ====
 (defn tree-text-parser [text]
   {(re-find #"(?m)^.+" text)
@@ -224,10 +221,6 @@
 (defn leaf-and-parent-collector [node]
   (:state (tree-visitor node [] [parent-visitor])))
 
-; must make dynamic so I can use (binding) in the midje test to override
-(defn ^:dynamic redmine-ws-post-ticket [subject description parent-id]
-  (println "should be overridden in test"))
-
 (defn redmine-ticket-creator-visitor [creation-service node state path]
   (if (and (contains? (:attrs node) :id) (number? (:id (:attrs node))))
     {:state (conj state {:subject (:subject (:attrs node))
@@ -235,11 +228,11 @@
     ; create ticket and add id to node
     (let [parent-id (get-in (first path) [:attrs :id])]
       {:node (assoc node :attrs (merge (:attrs node) 
-                                       (redmine-ws-post-ticket
+                                       (creation-service
                                          (:subject (:attrs node))
                                          (:description (:attrs node))
+                                         ;:project-id already known in creation-service fn
                                          (:assignee-id (:attrs node))
-                                         (:project-id ?)
                                          parent-id)))})))
 
 (defn redmine-ticket-tree-transformer [node creation-service]

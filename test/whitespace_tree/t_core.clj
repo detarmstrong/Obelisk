@@ -1,6 +1,6 @@
-(ns whitespace_tree.t-core
+(ns whitespace-tree.t-core
   (:use midje.sweet)
-  (:use [whitespace_tree.core])
+  (:use [whitespace-tree.core])
   (:require [clojure.zip :as zip]
             [clojure.string :as string]
             [clojure.data.xml :as xml]
@@ -13,9 +13,14 @@
 
 (def seq1 (make-sequence 0))
 
-(defn mock-redmine-post-ticket1 [subject description parent-id]
+(defn mock-redmine-post-ticket [subject description project-id assignee-id parent-id]
   "mock rm ws api for POST of ticket"
-  {:id (seq1) :subject subject :parent-id parent-id})
+  (clojure.pprint/pprint (str "subject: " subject
+                              ", desc: " description
+                              ", project-id: " project-id
+                              ", assignee-id: " assignee-id
+                              ", parent-id: " parent-id))
+  {:id (seq1)})
 
 (def seq2 (make-sequence 0))
 
@@ -23,10 +28,14 @@
   "mock rm ws api for POST of ticket"
   {:id (seq2) :subject subject :parent-id parent-id})
 
+(defn sample-text []
+  (slurp "resources/sample-raw-text"))
+
 (defn sample-text-next []
   (slurp "resources/sample-raw-text-2.0"))
 
 (defn sample-text-next-xml []
+  "x"
   (xml2/parse "resources/sample-raw-text-2.0.xml"))
 
 (facts "about SO tree-text-parser"
@@ -46,7 +55,6 @@
              generated-xml (xml/emit-str (simple-tree-text-to-xml-parser sample-text))
              ws-tree-input-stream (java.io.ByteArrayInputStream. (.getBytes generated-xml))
              tree (zip/xml-zip (xml2/parse ws-tree-input-stream))]
-         (binding [redmine-ws-post-ticket mock-redmine-post-ticket1]
            (fact "subject-finder returns first node matching subject"
                   (get-in (find-by-subject tree "child 2")
                           [:attrs :subject])
@@ -62,18 +70,20 @@
                  => {:parent "child 2", :subject "child 2.1"})
 
            (fact "redmine-ticket-tree-transformer sets nil id to 1"
-                 (let [result-tree (redmine-ticket-tree-transformer tree)]
-                   (get-in result-tree [:node :attrs :id])) => 1))))
+                 (let [result-tree (redmine-ticket-tree-transformer
+                                     tree
+                                     #(mock-redmine-post-ticket %1 %2 89 %3 %4))
+                       xx (clojure.pprint/pprint result-tree)]
+                   (get-in result-tree [:node :attrs :id])) => 1)))
 
 (facts "about inserting created redmine ids back into source whitespace-tree"
-       (binding [redmine-ws-post-ticket mock-redmine-post-ticket1]
          (let [source-text (slurp "resources/sample-raw-text")
                result-tree (zip/xml-zip
                              (xml2/parse
                                "resources/sample-raw-text-w-ids.xml"))]
            (fact "input whitespace tree first line will be prepended by 1"
                  (prepend-rm-id-to-source result-tree source-text)
-             => "1 hierarchy\n  2 child 1\n  3 child 2\n    4 child 2.1\n  5 child 3\n    6 child 3.1"))))
+             => "1 hierarchy\n  2 child 1\n  3 child 2\n    4 child 2.1\n  5 child 3\n    6 child 3.1")))
 
 (facts "about mock-redmine-post-ticket"
        (fact "mock-redmine-post-ticket will return the next val in sequence"
@@ -187,3 +197,14 @@
                              :attrs {:subject "test 3" :assignee-id 66}
                              :content nil}]})))
 
+(facts "about multiple visitors - first add-assignees then make rm tickets"
+       (fact "it works"
+             (let [expected-tree-zipper (zip/xml-zip
+                                          (xml2/parse "resources/add-assignee-transformer-pre-filled.xml"))
+                   result (tree-visitor
+                            expected-tree-zipper
+                            [90 90 66 32]
+                            [add-assignee-visitor
+                             (partial redmine-ticket-creator-visitor
+                                      #(mock-redmine-post-ticket %1 %2 89 %3 %4))])]
+               result => {})))

@@ -1,7 +1,9 @@
 (ns red-jem.core
   (:gen-class) ; required for uberjar
   (:require [red-jem.web-api :as web-api]
+            [whitespace-tree.core :as ws-tree]
             [clojure.java.io :as io]
+            [clojure.zip :as zip]
             [seesaw.rsyntax :as rsyntax])
   (:use clojure.core.memoize)
   (:use seesaw.keymap)
@@ -239,7 +241,7 @@
     :title "Assign"
     :id :options-frame
     :on-close :hide
-    :size [930 :by 450]))
+    :size [930 :by 460]))
 
 (def projects-frame
   (frame
@@ -422,34 +424,40 @@ is key"
   (listen members-lb :key-pressed
           on-lb-key-up))
 
-(listen options-ok-btn :action
-  (fn [e]
-    (let [project-id (:id (selection projects-lb))
-          member-id (:id (selection members-lb))
-          selected-text (get-selected-text area)
-          selected-text-start (first (selection area))
-          text-seq (seq (split-lines selected-text))
-          subject (first text-seq)
-          body (rest text-seq)
-          parent-issue-id ""
-          response (web-api/create-issue 
-                       subject
-                       (join "\n" body)
-                       project-id
-                       member-id
-                       parent-issue-id)
-          issue-id (get-in
-                     response
-                     [:body :issue :id])]
-        (insert-new-issue-id issue-id selected-text-start area))
+(defn options-ok-btn-action [e]
+  (let [project-id (:id (selection projects-lb))
+        assignments (mapv #(:id (selection %))
+                         (select options-frame [:.member-combo]))
+        tree-xml (ws-tree/next-tree-text-to-xml-parser (get-selected-text area))
+        tree-zipper (zip/xml-zip tree-xml)
+        tree-zipper-w-assignees (ws-tree/merge-assignees-transformer tree-zipper assignments)
+        visit-result (ws-tree/tree-visitor
+                       tree-zipper
+                       assignments
+                       [ws-tree/add-assignee-visitor
+                        (partial ws-tree/redmine-ticket-creator-visitor
+                                 (fn [subject description assignee-id parent-id]
+                                   {:id (get-in
+                                           (web-api/create-issue
+                                             subject
+                                             description
+                                             project-id
+                                             assignee-id
+                                             parent-id)
+                                           [:body :issue :id])}))
+                        ])])
+  ; insert issue ids, looping for each issue inserted
+  ; how do i know the ids?
+  ; or rewrite the whole selected raw text from the tree rep in xml?
     
-    ; clear key logs
-    (let [projects-key-log (get-in key-logs [projects-lb])
-          members-key-log (get-in key-logs [members-lb])]
-      ((projects-key-log :truncate!))
-      ((members-key-log :truncate!)))
+  (let [projects-key-log (get-in key-logs [projects-lb])
+        members-key-log (get-in key-logs [members-lb])]
+    ((projects-key-log :truncate!))
+    ((members-key-log :truncate!)))
     
-    (-> options-frame hide!)))
+    (-> options-frame hide!))
+
+(listen options-ok-btn :action options-ok-btn-action)
 
 (declare save-countdown)
 (defn set-area-doc-listener [] 

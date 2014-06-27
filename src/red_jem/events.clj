@@ -44,7 +44,8 @@
           member-items (conj (mapv (fn [_] (if (empty? (re-matches #"\s*//.*$" _))
                                              (combobox :model project-members-as-map
                                                          :renderer list-renderer
-                                                         :size [200 :by 22])
+                                                         :size [200 :by 22]
+                                                         :class :member-combo)
                                              [200 :by 22]))
                                    lines)
                              :fill-v)
