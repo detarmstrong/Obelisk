@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <task subject="Ticket tree"
   id="12"
-  description="testing this syntax where description lines are\nstarted with double quote">
+  description="testing this syntax where description lines are\nstarted with tabs">
   <task subject="Already ticketed - improve performance on the ssd" id="7832"
     description="(whitespace after the // is optional) It can't be too fast!"/>
   <task subject="rewrite the whole thing"

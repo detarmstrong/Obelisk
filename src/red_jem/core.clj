@@ -91,6 +91,11 @@
                   (let [v (split-at at-pos string)]
                     [(first v) piece (second v)]))))
 
+(defn insert-text [piece string at-pos widge]
+  "Insert some text into the text contained in the widget"
+  (text! widge
+         (insert piece string at-pos)))
+
 (defn insert-rm-subject [widge]
   (if-let [selectio (selection widge)]
     (text! widge 
@@ -151,7 +156,10 @@
                               (if check-connection?
                                 (let [passed-test (valid-token? api-key)]
                                   (do 
-                                    (alert (str "Is token valid? " passed-test))
+                                    (alert (str "Token is "
+                                                (if passed-test
+                                                  "valid!"
+                                                  "invalid")))
                                     (return-from-dialog e values)))
                                 (do 
                                   (return-from-dialog e values)))
@@ -182,7 +190,8 @@
                                        :text "Check connection"
                                        :selected? true)]
                             [(flow-panel :align :right 
-                                         :items [cancel-act ok-act]) "growx, spanx 2" "alignx right"]]))
+                                         :items [cancel-act ok-act])
+                             "growx, spanx 2" "alignx right"]]))
      pack!
      show!)))
 
@@ -214,7 +223,8 @@
                                            :id :search-text-field)
                                          (button
                                            :id :close-search
-                                           :icon (clojure.java.io/resource "close-button.png"))
+                                           :icon (clojure.java.io/resource
+                                                   "close-button.png"))
                                          " "]))
                :center scrollable-area)))
 
@@ -341,7 +351,9 @@
                 (.removeHighlight highlight))))
           (config! (select (to-root e) [:#search-panel]) :visible? false)))
 
-(def text-search-listener (listen (select red-jem-frame [:#search-text-field]) #{:remove-update :insert-update}
+(def text-search-listener (listen (select red-jem-frame
+                                          [:#search-text-field])
+                                  #{:remove-update :insert-update}
         (fn [e]
           (try
             (highlight-matching-text (text e) area)
@@ -358,8 +370,8 @@
      :as-string #(apply str @c)}))
 
 (def key-logs
-  "array of vectors - each vector is a stack of keys pressed while a listbox has focus. lb widget
-is key"
+  "array of vectors - each vector is a stack of keys pressed while a 
+   listbox has focus. lb widget is key"
   {projects-lb (make-key-log [])
    members-lb (make-key-log [])
    (select projects-frame [:#go-to-projects-lb]) (make-key-log [])})
@@ -425,37 +437,55 @@ is key"
           on-lb-key-up))
 
 (defn options-ok-btn-action [e]
-  (let [project-id (:id (selection projects-lb))
-        assignments (mapv #(:id (selection %))
-                         (select options-frame [:.member-combo]))
-        tree-xml (ws-tree/next-tree-text-to-xml-parser (get-selected-text area))
-        tree-zipper (zip/xml-zip tree-xml)
-        tree-zipper-w-assignees (ws-tree/merge-assignees-transformer tree-zipper assignments)
-        visit-result (ws-tree/tree-visitor
-                       tree-zipper
-                       assignments
-                       [ws-tree/add-assignee-visitor
-                        (partial ws-tree/redmine-ticket-creator-visitor
-                                 (fn [subject description assignee-id parent-id]
-                                   {:id (get-in
-                                           (web-api/create-issue
-                                             subject
-                                             description
-                                             project-id
-                                             assignee-id
-                                             parent-id)
-                                           [:body :issue :id])}))
-                        ])])
-  ; insert issue ids, looping for each issue inserted
-  ; how do i know the ids?
-  ; or rewrite the whole selected raw text from the tree rep in xml?
+  (future
+    (let [project-id (:id (selection projects-lb))
+          assignments (mapv #(:id (selection %))
+                           (select options-frame [:.member-combo]))
+          tree-xml (ws-tree/next-tree-text-to-xml-parser
+                     (get-selected-text area))
+          tree-zipper (zip/xml-zip tree-xml)
+          tree-zipper-w-assignees (ws-tree/merge-assignees-transformer
+                                    tree-zipper
+                                    assignments)
+          visit-result (:node
+                         (ws-tree/tree-visitor
+                           tree-zipper
+                           assignments
+                           [ws-tree/add-assignee-visitor
+                           (partial ws-tree/redmine-ticket-creator-visitor
+                                    (fn [subject description assignee-id parent-id]
+                                      (invoke-later
+                                        (config! options-frame
+                                                 :title
+                                                 (str "Assign - Creating "
+                                                       subject)))
+                                      {:id (get-in
+                                              (web-api/create-issue
+                                                subject
+                                                description
+                                                project-id
+                                                assignee-id
+                                                parent-id)
+                                              [:body :issue :id])}))]))
+          prepend-id-visitor-result-str (ws-tree/prepend-rm-id-to-source
+                                          (zip/xml-zip visit-result)
+                                          (get-selected-text area))
+          selection-text-range (selection area)
+          sub1 (.substring (config area :text) 0 (first selection-text-range))
+          sub2 (.substring (config area :text) (second selection-text-range)) 
+          ]
+      (println prepend-id-visitor-result-str)
+      (insert-text prepend-id-visitor-result-str
+                   (str sub1 sub2)
+                   (first selection-text-range)
+                   area))
     
-  (let [projects-key-log (get-in key-logs [projects-lb])
-        members-key-log (get-in key-logs [members-lb])]
-    ((projects-key-log :truncate!))
-    ((members-key-log :truncate!)))
+    (let [projects-key-log (get-in key-logs [projects-lb])
+          members-key-log (get-in key-logs [members-lb])]
+      ((projects-key-log :truncate!))
+      ((members-key-log :truncate!)))
     
-    (-> options-frame hide!))
+    (-> options-frame hide!)))
 
 (listen options-ok-btn :action options-ok-btn-action)
 
@@ -486,7 +516,8 @@ is key"
 (defn highlight-matching-text [search-string textarea]
   (let [text (text textarea)
         positions (re-pos (re-pattern (str "(?i)" search-string)) text)
-        highlight-painter (new DefaultHighlighter$DefaultHighlightPainter highlight-color)
+        highlight-painter (new DefaultHighlighter$DefaultHighlightPainter
+                               highlight-color)
         highlighter (.getHighlighter textarea)
         highlights (.getHighlights highlighter)]
 

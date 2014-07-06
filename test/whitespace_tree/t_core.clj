@@ -11,16 +11,10 @@
   (let [c (atom init-val)]
     #(reset! c (+ 1 @c))))
 
-(def seq1 (make-sequence 0))
-
-(defn mock-redmine-post-ticket [subject description project-id assignee-id parent-id]
+(defn mock-redmine-post-ticket
+  [the-seq subject description project-id assignee-id parent-id]
   "mock rm ws api for POST of ticket"
-  (clojure.pprint/pprint (str "subject: " subject
-                              ", desc: " description
-                              ", project-id: " project-id
-                              ", assignee-id: " assignee-id
-                              ", parent-id: " parent-id))
-  {:id (seq1)})
+  {:id (the-seq)})
 
 (def seq2 (make-sequence 0))
 
@@ -35,7 +29,6 @@
   (slurp "resources/sample-raw-text-2.0"))
 
 (defn sample-text-next-xml []
-  "x"
   (xml2/parse "resources/sample-raw-text-2.0.xml"))
 
 (facts "about SO tree-text-parser"
@@ -70,23 +63,36 @@
                  => {:parent "child 2", :subject "child 2.1"})
 
            (fact "redmine-ticket-tree-transformer sets nil id to 1"
-                 (let [result-tree (redmine-ticket-tree-transformer
+                 (let [id-seq (make-sequence 0)
+                       result-tree (redmine-ticket-tree-transformer
                                      tree
-                                     #(mock-redmine-post-ticket %1 %2 89 %3 %4))
-                       xx (clojure.pprint/pprint result-tree)]
-                   (get-in result-tree [:node :attrs :id])) => 1)))
+                                     #(mock-redmine-post-ticket id-seq
+                                                                 %1
+                                                                 %2
+                                                                 89
+                                                                 %3
+                                                                 %4))
+                       merge-assignee-result-tree (merge-assignees-transformer
+                                                    (zip/xml-zip (:node result-tree))
+                                                    [4 5 6 7 8 9])]
+                   (attribute-collector (zip/xml-zip merge-assignee-result-tree) :id)
+                   =>
+                   [{:id 1} {:id 2} {:id 3} {:id 4} {:id 5} {:id 6}]))))
 
 (facts "about inserting created redmine ids back into source whitespace-tree"
          (let [source-text (slurp "resources/sample-raw-text")
                result-tree (zip/xml-zip
                              (xml2/parse
-                               "resources/sample-raw-text-w-ids.xml"))]
+                               "resources/sample-raw-text-w-ids.xml"))
+               assignee-result (merge-assignees-transformer result-tree
+                                                     [11 12 13 14 15 16])]
+           
            (fact "input whitespace tree first line will be prepended by 1"
-                 (prepend-rm-id-to-source result-tree source-text)
-             => "1 hierarchy\n  2 child 1\n  3 child 2\n    4 child 2.1\n  5 child 3\n    6 child 3.1")))
+                 (prepend-rm-id-to-source  (zip/xml-zip assignee-result) source-text)
+                 => "1 hierarchy\n  2 child 1\n  3 child 2\n    4 child 2.1\n  5 child 3\n    6 child 3.1")))
 
 (facts "about mock-redmine-post-ticket"
-       (fact "mock-redmine-post-ticket will return the next val in sequence"
+       (fact "mock-redmine-post-ticket will return the next val in sequence."
              (map #(:id %1)
                   (repeatedly 6 #(mock-redmine-post-ticket2 "sub" "desc" 1)))
              => '(1 2 3 4 5 6)))
@@ -117,7 +123,7 @@
                (look-ahead-for-subject-and-description-and-id sample-text))
              =>
              {:subject "Ticket tree"
-              :description "testing this syntax where description lines are\nstarted with double quote"
+              :description "testing this syntax where description lines are\nstarted with tabs"
               :id "12"})
 
        (fact "format-description-lines: initial call of next-tree-text-to-xml-parser
@@ -126,8 +132,8 @@
              (let [sample-text (sample-text-next)]
                (format-description-lines sample-text) => "12 Ticket tree
   // testing this syntax where description lines are
-  // started with double quote
-  7832 Already ticketed - improve performance on the ssd
+\t// started with tabs
+\t7832 Already ticketed - improve performance on the ssd
     //(whitespace after the // is optional) It can't be too fast!
   rewrite the whole thing
     // Indented comment for line above.
@@ -197,14 +203,23 @@
                              :attrs {:subject "test 3" :assignee-id 66}
                              :content nil}]})))
 
-(facts "about multiple visitors - first add-assignees then make rm tickets"
-       (fact "it works"
-             (let [expected-tree-zipper (zip/xml-zip
-                                          (xml2/parse "resources/add-assignee-transformer-pre-filled.xml"))
-                   result (tree-visitor
-                            expected-tree-zipper
-                            [90 90 66 32]
-                            [add-assignee-visitor
-                             (partial redmine-ticket-creator-visitor
-                                      #(mock-redmine-post-ticket %1 %2 89 %3 %4))])]
-               result => {})))
+(facts "about multiple chained visitors - first add-assignees then make rm tickets"
+  (let [expected-tree-zipper (zip/xml-zip
+                            (xml2/parse "resources/add-assignee-transformer-pre-filled.xml"))
+        id-seq (make-sequence 0)
+        visit-result (:node (tree-visitor
+                                     expected-tree-zipper
+                                     [90 90 66]
+                                     [add-assignee-visitor
+                                      (partial redmine-ticket-creator-visitor
+                                               #(mock-redmine-post-ticket id-seq %1 %2 89 %3 %4))]))
+        prepend-id-result (prepend-rm-id-to-source (zip/xml-zip visit-result)
+                                                   (slurp "resources/add-assignee-transformer-pre-filled.txt"))]
+    (fact "each node contains an assignee and was given an id"
+          [(attribute-collector (zip/xml-zip visit-result) :id)
+           (attribute-collector (zip/xml-zip visit-result) :assignee-id)]
+          => [[{:id 1} {:id 2} {:id 3}] [{:assignee-id 90} {:assignee-id 90} {:assignee-id 66}]])
+    
+    (fact "result text has ids prepended"
+          prepend-id-result => "1 test 1\n  2 test 2\n  3 test 3")))
+

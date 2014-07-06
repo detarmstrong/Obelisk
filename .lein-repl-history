@@ -1,0 +1,5 @@
+(use 'midje.repl)
+(autotest)
+(ns 'whitespace-tree.core)
+(use 'midje.repl)
+(autotest)

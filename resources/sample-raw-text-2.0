@@ -1,7 +1,7 @@
 12 Ticket tree
   // testing this syntax where description lines are
-  // started with double quote
-  7832 Already ticketed - improve performance on the ssd
+	// started with tabs
+	7832 Already ticketed - improve performance on the ssd
   //(whitespace after the // is optional) It can't be too fast!
   rewrite the whole thing
     // Indented comment for line above.

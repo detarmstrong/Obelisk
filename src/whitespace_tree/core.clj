@@ -77,15 +77,19 @@
                                  current-line line
                                  current-indent-width (/ (count (re-find #"^\s*" current-line)) 2)
                                  prev-line-description-line? (> (count (re-find #"\s*//" prev-line)) 1)
-                                 current-line-description-line? (> (count (re-find #"\s*//" current-line)) 1 )]
+                                 current-line-description-line? (> (count
+                                                                     (re-find #"\s*//" current-line)) 1 )]
 
                               (if (and (not prev-line-description-line?)
                                        current-line-description-line?)
                                 ;adjust current line to be one indent greater than previous line
                                 {:prev-line current-line
                                  :lines-accum (conj lines
-                                                (apply str (reverse (conj (repeat
-                                                             (+ prev-line-indent-width 1) "  ") stripped-line ))))}
+                                                (apply str (reverse
+                                                             (conj
+                                                               (repeat
+                                                                 (+ prev-line-indent-width 1) "  ")
+                                                               stripped-line ))))}
                                 {:prev-line current-line
                                  :lines-accum (conj lines line)})))
                           {:prev-line "" :lines-accum '()}
@@ -95,7 +99,7 @@
   "Find line in source-text by finding it in result-zipper. If found
   prepend id to the line"
 
-  (let [source-text-coll (string/split source-text #"(?m)\n")
+  (let [source-text-coll (string/split-lines source-text)
         idified (map #(let [detach-whitespace (re-matches #"(\s*)(.+)" %1)
                             leading-whitespace (nth detach-whitespace 1)
                             trimmed-text (nth detach-whitespace 2)
@@ -113,7 +117,12 @@
   "This should be called whitespace-tree/parse or parse-to-xml"
   ([text]
     (next-tree-text-to-xml-parser
-      (format-description-lines text)
+      ((comp format-description-lines
+             #(string/replace %1
+                              #"(?m)^\t+"
+                              (fn [matched]
+                                (apply str (repeat (count matched) "  ")))))
+        text)
       true))
 
   ([text pre-formatted?]
