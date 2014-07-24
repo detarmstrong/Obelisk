@@ -1,4 +1,4 @@
-(defproject red-jem "1.1.1"
+(defproject red-jem "1.1.2"
   :description "Obelisk is a native app for Redmine"
   :dependencies [[org.clojure/clojure "1.5.1"]
                   [seesaw "1.4.4"]
