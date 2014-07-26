@@ -5,8 +5,7 @@ Use it to speed up the creation an organization of tickets.
 
 ## Usage
 
-Download jar file from downloads and from the terminal run
-java -jar pathtothe.jar
+Download jar file from downloads and from the terminal run `java -jar pathtothe.jar`
 
 ## License
 
