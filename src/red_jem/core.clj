@@ -453,20 +453,32 @@
                            assignments
                            [ws-tree/add-assignee-visitor
                            (partial ws-tree/redmine-ticket-creator-visitor
-                                    (fn [subject description assignee-id parent-id]
+                                    (fn [id subject description assignee-id parent-id]
                                       (invoke-later
                                         (config! options-frame
                                                  :title
                                                  (str "Assign - Creating "
                                                        subject)))
-                                      {:id (get-in
-                                              (web-api/create-issue
-                                                subject
-                                                description
-                                                project-id
-                                                assignee-id
-                                                parent-id)
-                                              [:body :issue :id])}))]))
+                                      (let [http-resp (web-api/create-issue
+                                                        id
+                                                        subject
+                                                        description
+                                                        project-id
+                                                        assignee-id
+                                                        parent-id)]
+                                        ; PUT request doesn't return anything
+                                        ; so the id should be returned directly
+                                        ; and the parent-id should be reused from
+                                        ; whatever was passed in to create-issue
+                                        (if (not (empty? id))
+                                          {:id id
+                                           :parent-id parent-id}
+                                          {:id (get-in
+                                                 http-resp
+                                                 [:body :issue :id])
+                                           :parent-id (get-in
+                                                        http-resp
+                                                        [:body :issue :parent_issue_id])}))))]))
           prepend-id-visitor-result-str (ws-tree/prepend-rm-id-to-source
                                           (zip/xml-zip visit-result)
                                           (get-selected-text area))

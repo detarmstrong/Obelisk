@@ -42,25 +42,32 @@
      :basic-auth [api-token "random"]
      :query-params {:include "children"}}))
 
-(defn create-issue [subject body project-id member-id parent-issue-id]
-  (println (generate-string {:issue {:subject subject
-                                     :description body
-                                     :project_id project-id
-                                     :assigned_to_id member-id
-                                     :parent_issue_id parent-issue-id}}))
-  (client/post "http://redmine.visiontree.com/issues.json"
-    {:basic-auth [api-token "random"]
-     :body (generate-string {:issue {:subject subject 
-                                     :description body
-                                     :project_id project-id
-                                     :assigned_to_id member-id
-                                     :parent_issue_id parent-issue-id}})
-     :content-type :json
-     :socket-timeout 9000
-     :conn-timeout 8000
-     :accept :json
-     :as :json
-     :throw-entire-message? true}))
+(defn create-issue [id subject body project-id member-id parent-issue-id]
+  (let [id (if (not (empty? id))
+             (Integer/parseInt id)
+             nil)
+        url (if (number? id)
+              (str "http://redmine.visiontree.com/issues/" id ".json")
+              (str "http://redmine.visiontree.com/issues.json"))
+        web-method (if (number? id)
+                     client/put
+                     client/post)]
+                          
+    (web-method url
+      {:debug true
+       :debug-body true
+       :basic-auth [api-token "random"]
+       :body (generate-string {:issue {:subject subject 
+                                       :description body
+                                       :project_id project-id
+                                       :assigned_to_id member-id
+                                       :parent_issue_id parent-issue-id}})
+       :content-type :json
+       :socket-timeout 9000
+       :conn-timeout 8000
+       :accept :json
+       :as :json
+       :throw-entire-message? true})))
 
 (defn valid-token? [api-token]
   "Make a request using the token provided, expect 200"

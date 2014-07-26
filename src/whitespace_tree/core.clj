@@ -238,9 +238,9 @@
     (let [parent-id (get-in (first path) [:attrs :id])]
       {:node (assoc node :attrs (merge (:attrs node) 
                                        (creation-service
+                                         (:id (:attrs node))
                                          (:subject (:attrs node))
                                          (:description (:attrs node))
-                                         ;:project-id already known in creation-service fn
                                          (:assignee-id (:attrs node))
                                          parent-id)))})))
 

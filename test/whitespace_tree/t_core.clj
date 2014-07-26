@@ -12,9 +12,13 @@
     #(reset! c (+ 1 @c))))
 
 (defn mock-redmine-post-ticket
-  [the-seq subject description project-id assignee-id parent-id]
+  [the-seq id subject description assignee-id parent-id]
   "mock rm ws api for POST of ticket"
-  {:id (the-seq)})
+  (if (number? id)
+    {:id id
+     :parent-id parent-id}
+    {:id (the-seq)
+     :parent-id parent-id}))
 
 (def seq2 (make-sequence 0))
 
@@ -66,12 +70,7 @@
                  (let [id-seq (make-sequence 0)
                        result-tree (redmine-ticket-tree-transformer
                                      tree
-                                     #(mock-redmine-post-ticket id-seq
-                                                                 %1
-                                                                 %2
-                                                                 89
-                                                                 %3
-                                                                 %4))
+                                     (partial mock-redmine-post-ticket id-seq))
                        merge-assignee-result-tree (merge-assignees-transformer
                                                     (zip/xml-zip (:node result-tree))
                                                     [4 5 6 7 8 9])]
@@ -95,7 +94,10 @@
        (fact "mock-redmine-post-ticket will return the next val in sequence."
              (map #(:id %1)
                   (repeatedly 6 #(mock-redmine-post-ticket2 "sub" "desc" 1)))
-             => '(1 2 3 4 5 6)))
+             => '(1 2 3 4 5 6))
+       (fact "mock-redmine-post-ticket will return the id passed in"
+             (mock-redmine-post-ticket (make-sequence 99) 32 "x" "y" 8 9)
+             => {:id 32 :parent-id 9}))
 
 (facts "about simple-tree-text-to-xml-parser"
        ; multiroot text selection is "root1\nroot2\n  some child"
@@ -212,13 +214,16 @@
                                      [90 90 66]
                                      [add-assignee-visitor
                                       (partial redmine-ticket-creator-visitor
-                                               #(mock-redmine-post-ticket id-seq %1 %2 89 %3 %4))]))
+                                               (partial mock-redmine-post-ticket id-seq))]))
         prepend-id-result (prepend-rm-id-to-source (zip/xml-zip visit-result)
                                                    (slurp "resources/add-assignee-transformer-pre-filled.txt"))]
     (fact "each node contains an assignee and was given an id"
           [(attribute-collector (zip/xml-zip visit-result) :id)
-           (attribute-collector (zip/xml-zip visit-result) :assignee-id)]
-          => [[{:id 1} {:id 2} {:id 3}] [{:assignee-id 90} {:assignee-id 90} {:assignee-id 66}]])
+           (attribute-collector (zip/xml-zip visit-result) :assignee-id)
+           (attribute-collector (zip/xml-zip visit-result) :parent-id)]
+          => [[{:id 1} {:id 2} {:id 3}]
+              [{:assignee-id 90} {:assignee-id 90} {:assignee-id 66}]
+              [{:parent-id nil} {:parent-id 1} {:parent-id 1}]])
     
     (fact "result text has ids prepended"
           prepend-id-result => "1 test 1\n  2 test 2\n  3 test 3")))
