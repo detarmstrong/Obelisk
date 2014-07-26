@@ -34,7 +34,7 @@
 
 (def description-lines-pattern #"^\s*//.*$")
 (def subject-pattern #"\d*\s*([\s\S]+)$")
-(def leading-id-pattern #"\s*(\d+)\s+")
+(def leading-id-pattern #"^\s*(\d+)\s+")
 
 (defn look-ahead-for-subject-and-description-and-id [text]
   "Given a whitespacetree, start from first line
