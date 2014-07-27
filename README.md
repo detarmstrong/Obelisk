@@ -9,7 +9,7 @@ First, select text and then hit a shortcut:
 | ctrl+t | Create tickets from selected lines. Lines starting with // will populate the description |  
 | ctrl+r | Find the selected id and insert it's subject into the notepad |  
 | ctrl+g | Search the selected text in redmine |
-| ctrl+f | Search the notepad for text |
+| ctrl+f | Search the notepad for text. Does not operate on selected text in notepad |
 
 ## Usage
 
