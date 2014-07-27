@@ -1,13 +1,15 @@
 # obelisk
 
-Obelisk is a desktop companion to the Redmine project management application.
-Use it to speed up the creation and organization of tickets using simple keyboard shortcuts:
+Obelisk is a desktop companion to the Redmine project management application. Use it to speed up the creation and organization of tickets using simple keyboard shortcuts:
 
-First, select text and then hit a shortcut:
+First, select text and then hit a shortcut:  
 
-| ctrl+t | A ssign selected lines as ticket |
-| ctrl+r | Find the selected id and insert it's subject into the notepad |
+| Shortcut | Description |
+|----------|------------|
+| ctrl+t | Create tickets from selected lines. Lines starting with // will populate the description |  
+| ctrl+r | Find the selected id and insert it's subject into the notepad |  
 | ctrl+g | Search the selected text in redmine |
+| ctrl+f | Search the notepad for text |
 
 ## Usage
 
