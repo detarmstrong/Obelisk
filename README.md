@@ -1,4 +1,4 @@
-# obelisk
+# Obelisk
 
 Obelisk is a companion to the Redmine project management application that runs on the Linux/Mac/Windows desktop. Use it to speed up the creation and organization of tickets using simple keyboard shortcuts:
 
