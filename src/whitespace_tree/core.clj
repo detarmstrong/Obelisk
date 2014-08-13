@@ -67,31 +67,42 @@
    This is to satisfy the tree-text-to-xml parser so
    that description lines don't have to be indented in the source text, they can
    be on the same indent level or less than the subject"
-  (string/join "\n" (reverse
-               (:lines-accum
-                  (reduce (fn [state line]
-                            (let [lines (:lines-accum state)
-                                  stripped-line (string/trim line)
-                                 prev-line (:prev-line state)
-                                 prev-line-indent-width (/ (count (re-find #"^\s*" prev-line)) 2)
-                                 current-line line
-                                 current-indent-width (/ (count (re-find #"^\s*" current-line)) 2)
-                                 prev-line-description-line? (> (count (re-find #"\s*//" prev-line)) 1)
-                                 current-line-description-line? (> (count
-                                                                     (re-find #"\s*//" current-line)) 1 )]
-
-                              (if (and (not prev-line-description-line?)
-                                       current-line-description-line?)
-                                ;adjust current line to be one indent greater than previous line
-                                {:prev-line current-line
-                                 :lines-accum (conj lines
-                                                (apply str (reverse
-                                                             (conj
-                                                               (repeat
-                                                                 (+ prev-line-indent-width 1) "  ")
-                                                               stripped-line ))))}
-                                {:prev-line current-line
-                                 :lines-accum (conj lines line)})))
+  (string/join "\n" 
+               (reverse
+                 (:lines-accum
+                    (reduce
+                      (fn [state line]
+                        (let [lines (:lines-accum state)
+                              stripped-line (string/trim line)
+                              prev-line (:prev-line state)
+                              prev-line-indent-width (/ (count (re-find
+                                                                 #"^\s*"
+                                                                 prev-line)) 2)
+                              current-line line
+                              current-indent-width (/ (count (re-find
+                                                               #"^\s*"
+                                                               current-line)) 2)
+                              prev-line-description-line? (> (count (re-find
+                                                                      #"\s*//"
+                                                                      prev-line)) 1)
+                              current-line-description-line? (> (count
+                                                                  (re-find
+                                                                    #"\s*//"
+                                                                    current-line)) 1 )]
+                          (if (and (not prev-line-description-line?)
+                                   current-line-description-line?)
+                            ;adjust current line to be one indent greater 
+                            ;than previous line
+                            {:prev-line current-line
+                             :lines-accum (conj lines
+                                            (apply str (reverse
+                                                         (conj
+                                                           (repeat
+                                                             (+ prev-line-indent-width 1)
+                                                             "  ")
+                                                           stripped-line ))))}
+                            {:prev-line current-line
+                             :lines-accum (conj lines line)})))
                           {:prev-line "" :lines-accum '()}
                           (string/split text #"\n"))))))
 
