@@ -4,7 +4,8 @@
             [whitespace-tree.core :as ws-tree]
             [clojure.java.io :as io]
             [clojure.zip :as zip]
-            [seesaw.rsyntax :as rsyntax])
+            [seesaw.rsyntax :as rsyntax]
+            [string.string])
   (:use clojure.core.memoize)
   (:use seesaw.keymap)
   (:use [seesaw core mig])
@@ -328,6 +329,30 @@
          (fn [widget]
            (config! (select red-jem-frame [:#search-panel]) :visible? true)
            (request-focus! (select red-jem-frame [:#search-text-field]))))
+
+(map-key area "control D"
+         (fn [widget]
+           (if-let [selectio (selection widget)]
+             (do 
+               (text! widget
+                      (let [[range-start range-end] selectio
+                            full-text (config widget :text)
+                            prev-new-line-pos (string.string/find-prev-occurrence-of-char
+                                                "\n"
+                                                full-text
+                                                range-start)
+                            text-to-comment (subs full-text
+                                                  (inc prev-new-line-pos)
+                                                  range-end)
+                            formatted-comment (string.string/linewise-prepend
+                                                "// "
+                                                text-to-comment
+                                                true)]
+                            (str (subs full-text 0 (inc prev-new-line-pos))
+                                 formatted-comment
+                                 (subs full-text range-end (count full-text)))))
+
+               (config! widget :caret-position (first selectio))))))
 
 (listen (select red-jem-frame [:#go-to-button]) :action 
         go-to-feature-button-handler)

@@ -1,4 +1,5 @@
-(ns string.string)
+(ns string.string
+  (:require [clojure.string :as s :refer [join split-lines]]))
 
 (defn find-prev-occurrence-of-char [char text range-start]
   "Find occurrence of single char in text looking backwards
@@ -14,3 +15,16 @@
           (recur (inc index)
                  (nth reversed-text (inc index)))
           -1)))))
+
+(defn linewise-prepend [small-text full-text preserve-whitespace]
+  "Given full-text prepend small-text to each line"
+  (s/replace
+    full-text
+    #"(?m)^\s*"
+    (fn [matched]
+      (if preserve-whitespace
+        (str matched small-text)
+        (str small-text matched)))))
+             
+        
+  
