@@ -3,3 +3,8 @@
 (ns 'whitespace-tree.core)
 (use 'midje.repl)
 (autotest)
+(nth [1 2] 2)
+(nth? )
+(length [1 2])
+(size [12])
+(count [12])
