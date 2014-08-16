@@ -584,6 +584,9 @@
   (load-or-create-note-file)
   (set-area-doc-listener)
   (unbind-ctrl+d)
+
+  ;; TODO test this! on linux and mac
+  (.. area (discardAllEdits))
   
   ; setting :border on the button doesn't work :(
   (config! (select red-jem-frame [:#close-search]) :border nil)
