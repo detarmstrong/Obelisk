@@ -579,8 +579,6 @@
           (.addHighlight
             (first pos) (second pos) 
             highlight-painter))))))
- 
-(load "ticket_preview")
 
 (defn init-red-jem  []
   (load-or-create-note-file)
