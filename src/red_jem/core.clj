@@ -37,6 +37,14 @@
                 :tab-size 2
                 :syntax :none))
 
+(defn unbind-ctrl+d []
+  "Unbind ctrl+d, which is delete line by default in rsyntax area"
+  (let [mod (.. area (getToolkit) (getMenuShortcutKeyMask))
+        d-key-stroke (javax.swing.KeyStroke/getKeyStroke
+                       java.awt.event.KeyEvent/VK_D mod)
+        input-map (.. area (getInputMap))]
+    (doto input-map (.put d-key-stroke "nothing"))))
+
 (def obelisk-note-file
   (let [dot-file ".obelisk"
         home-dir (System/getProperty "user.home")
@@ -295,8 +303,8 @@
      pack!
      show!)))
 
-; commenting out during uberjaring causes the ubarjaring to break
-(-> red-jem-frame pack! show!)
+; commenting out during uberjaring. causes the ubarjaring to break
+;(-> red-jem-frame pack! show!)
 
 (load "events")
 
@@ -577,6 +585,7 @@
 (defn init-red-jem  []
   (load-or-create-note-file)
   (set-area-doc-listener)
+  (unbind-ctrl+d)
   
   ; setting :border on the button doesn't work :(
   (config! (select red-jem-frame [:#close-search]) :border nil)
