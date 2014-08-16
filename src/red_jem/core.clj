@@ -99,12 +99,14 @@
 
 (defn insert-rm-subject [widge]
   (if-let [selectio (selection widge)]
-    (text! widge 
-           (insert 
-             (str " " (issue-subject 
-                        (get-selected-text widge)))
-             (config widge :text)
-             (second selectio)))))
+    (do
+      (text! widge 
+             (insert 
+               (str " " (issue-subject 
+                          (get-selected-text widge)))
+               (config widge :text)
+               (second selectio)))
+      (config! widge :caret-position (first selectio)))))
 
 (defn insert-new-issue-id 
   "Insert the passed in id at position in the string of the widget"
