@@ -224,7 +224,17 @@
           => [[{:id 1} {:id 2} {:id 3}]
               [{:assignee-id 90} {:assignee-id 90} {:assignee-id 66}]
               [{:parent-id nil} {:parent-id 1} {:parent-id 1}]])
-    
+
     (fact "result text has ids prepended"
           prepend-id-result => "1 test 1\n  2 test 2\n  3 test 3")))
+
+(facts "about collect-ticket-ids"
+       (fact "it collects ticket ids if found"
+             (collect-ticket-ids "1 this\n  2 that\n3oh ho")
+             =>
+             '(1 2 3))
+       (fact "it returns empty list if no ticket ids found"
+             (collect-ticket-ids "nothing 99 to see")
+             =>
+             '()))
 

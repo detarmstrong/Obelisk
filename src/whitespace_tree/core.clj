@@ -124,6 +124,10 @@
                      source-text-coll)]
     (string/join "\n" idified)))
 
+(defn collect-ticket-ids [text]
+  "Parse text looking for leading digits (ticket ids in this grammar)"
+  (map #(Integer/parseInt (second %)) (re-seq #"(?m)^\s*(\d+)" text)))
+
 (defn next-tree-text-to-xml-parser
   "This should be called whitespace-tree/parse or parse-to-xml"
   ([text]

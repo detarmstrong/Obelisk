@@ -156,6 +156,14 @@
 (def resources
   '(:issues :news :documents :wiki_pages :changesets))
 
+(defn redmine-bulk-edit-url [ticket-ids]
+  "Return bulk-edit mode url given supplied ticket-ids"
+  (str "http://redmine.visiontree.com/bulk_edit?"
+       (apply str
+              (interleave (repeat (count ticket-ids) "ids[]=")
+                          ticket-ids
+                          (repeat (count ticket-ids) "&")))))
+
 (defn open-config-dialog [parent-frame]
   "Builds and shows dialog for configuring obelisk. Returns values of form"
   (let [ok-act (action
@@ -363,6 +371,14 @@
                                  (subs full-text range-end (count full-text)))))
 
                (config! widget :caret-position (first selectio))))))
+
+(map-key area "control E"
+         (fn [widget]
+           (if-let [selectio (selection widget)]
+             (let [selected-text (get-selected-text widget)]
+               (open-url-on-desktop
+                 (redmine-bulk-edit-url
+                   (ws-tree/collect-ticket-ids selected-text)))))))
 
 (listen (select red-jem-frame [:#go-to-button]) :action 
         go-to-feature-button-handler)
