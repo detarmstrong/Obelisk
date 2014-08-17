@@ -158,7 +158,7 @@
 
 (defn redmine-bulk-edit-url [ticket-ids]
   "Return bulk-edit mode url given supplied ticket-ids"
-  (str "http://redmine.visiontree.com/bulk_edit?"
+  (str "http://redmine.visiontree.com/issues/bulk_edit?"
        (apply str
               (interleave (repeat (count ticket-ids) "ids[]=")
                           ticket-ids
