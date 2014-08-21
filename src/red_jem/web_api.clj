@@ -6,7 +6,11 @@
   (:use [clojure.string :only (trim)]))
 
 (def obelisk-token-file-path
-  ".obelisk_rm_token")
+  (let [dot-file ".obelisk_rm_token"
+        home-dir (System/getProperty "user.home")
+        file-separator (System/getProperty "file.separator")
+        full-path (apply str (interpose file-separator [home-dir dot-file]))]
+    full-path))
 
 (defn token? []
   (-> (io/file obelisk-token-file-path) (.isFile)))
