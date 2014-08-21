@@ -255,7 +255,8 @@
   (vertical-panel :items [(horizontal-panel 
                              :class :hp 
                              :items [(vertical-panel :items [(scrollable projects-lb
-                                                                         :size [300 :by 400])
+                                                                         :size [300 :by 400]
+                                                                         :border 0)
                                                              :fill-v])
             
                                      (vertical-panel :id :members-panel  
