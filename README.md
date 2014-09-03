@@ -7,7 +7,7 @@ Obelisk is a companion to the Redmine project management application that runs o
 
 [Download the app!](https://github.com/detarmstrong/Obelisk/releases/latest)  
 
-Once downloaded, from the terminal run `java -jar pathtothe.jar`  
+Once downloaded, from the terminal run `java -jar path/to/the/app's .jar file`  
 
 A dialog box will appear upon opening the app that requires your Redmine API key. You can find your API key on your Redmine account page when logged in, on the right-hand pane.  
 
