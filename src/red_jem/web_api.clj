@@ -22,7 +22,7 @@
 (defn project-members [project-id]
   (get-in 
     (client/get 
-      (format "http://redmine.visiontree.com/projects/%s/memberships.json"
+      (format "https://redmine.visiontree.com/projects/%s/memberships.json"
         project-id) 
       {:basic-auth [api-token "d"]
        :as :json})
@@ -30,17 +30,17 @@
 
 (defn projects []
   (sort-by :name
-	  (get-in 
-	    (client/get
-	      "http://redmine.visiontree.com/projects.json" 
-	      {:basic-auth [api-token "d"]
-	       :as :json
-	       :query-params {:limit 300}})
-	    [:body :projects])))
+    (get-in 
+      (client/get
+        "https://redmine.visiontree.com/projects.json" 
+        {:basic-auth [api-token "d"]
+         :as :json
+         :query-params {:limit 300}})
+      [:body :projects])))
 
 (defn issue [id]
   (client/get 
-    (format "http://redmine.visiontree.com/issues/%d.json" 
+    (format "https://redmine.visiontree.com/issues/%d.json" 
       (#(Integer/parseInt %) (trim id))) 
     {:as :json
      :basic-auth [api-token "random"]
@@ -51,8 +51,8 @@
              (Integer/parseInt id)
              nil)
         url (if (number? id)
-              (str "http://redmine.visiontree.com/issues/" id ".json")
-              (str "http://redmine.visiontree.com/issues.json"))
+              (str "https://redmine.visiontree.com/issues/" id ".json")
+              (str "https://redmine.visiontree.com/issues.json"))
         web-method (if (number? id)
                      client/put
                      client/post)]
@@ -75,7 +75,7 @@
 
 (defn valid-token? [api-token]
   "Make a request using the token provided, expect 200"
-  (let [response (client/get "http://redmine.visiontree.com/users/current.json" 
+  (let [response (client/get "https://redmine.visiontree.com/users/current.json" 
                                   {:basic-auth [api-token "d"]
                                    :as :json
                                    :socket-timeout 9000
