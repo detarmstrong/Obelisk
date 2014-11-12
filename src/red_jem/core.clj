@@ -312,8 +312,8 @@
      pack!
      show!)))
 
-; commenting out during uberjaring. causes the ubarjaring to break
-;(-> red-jem-frame pack! show!)
+; uncomment if uberjarring - seems to make it work
+(-> red-jem-frame pack! show!)
 
 (load "events")
 
