@@ -24,7 +24,7 @@ Select text and choose a shortcut action:
 
 | Shortcut | Description |
 |----------|------------|
-| ctrl+t | Create tickets from selected lines. Lines starting with // will populate the description. Indented lines will become subtasks for first prior dedented line. If line starts with ticket number then new tickets below it will be created as subtasks |  
+| ctrl+t | Create tickets from selected lines. Lines starting with // will populate the description. Indented lines will become subtasks for first prior dedented line. If line starts with ticket number then new tickets below it will be created as subtasks of that existing id |  
 | ctrl+r | Find the selected id and insert it's subject into the notepad |  
 | ctrl+g | Search the selected text in redmine. Opens search results in browser |
 | ctrl+f | Search the notepad for text. Does not operate on selected text in notepad |
@@ -32,6 +32,6 @@ Select text and choose a shortcut action:
 
 ## License
 
-Copyright (C) 2012 Danny Armstrong
+Copyright (C) 2015 Danny Armstrong
 
 Distributed under the Eclipse Public License, the same as Clojure.
