@@ -23,6 +23,6 @@ Start typing into the notepad. Select text and choose a shortcut action:
 
 ## License
 
-Copyright (C) 2012 Danny Armstrong
+Copyright (C) 2017 Danny Armstrong
 
 Distributed under the Eclipse Public License, the same as Clojure.
