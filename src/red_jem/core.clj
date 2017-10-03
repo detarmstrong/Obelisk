@@ -252,19 +252,19 @@
                     :margin 6))
 
 (def options-panel
-  (vertical-panel :items [(horizontal-panel 
-                             :class :hp 
-                             :items [(vertical-panel :items [(scrollable projects-lb
-                                                                         :size [300 :by 400]
-                                                                         :border 0)
-                                                             :fill-v])
-            
-                                     (vertical-panel :id :members-panel  
-                                                     :items [])
-                                     (vertical-panel :id :lines-panel 
-                                                     :items [])
-                                             :fill-h])
-                          (horizontal-panel :items [options-ok-btn])]))
+  (scrollable
+		(vertical-panel :items [(horizontal-panel 
+															 :class :hp 
+															 :items [(vertical-panel :items [(scrollable projects-lb
+																																					 :size [300 :by 400]
+																																					 :border 0)
+																															 :fill-v])
+																			 (vertical-panel :id :members-panel
+																											 :items [])
+																			 (vertical-panel :id :lines-panel 
+																											 :items [])
+																							 :fill-h])
+														(horizontal-panel :items [options-ok-btn])])))
 
 (def options-frame
   (frame
@@ -588,7 +588,7 @@
     (doseq [highlight highlights]
       (doto highlighter
         (.removeHighlight highlight)))
-    
+
     (doseq [pos positions]
       (if-not (= search-string "")
         (doto
@@ -597,21 +597,20 @@
             (first pos) (second pos) 
             highlight-painter))))))
 
-(defn init-red-jem  []
+(defn -main  [& args]
   (load-or-create-note-file)
   (set-area-doc-listener)
   (unbind-ctrl+d)
 
   ;; TODO test this! on linux and mac
   (.. area (discardAllEdits))
-  
+
   ; setting :border on the button doesn't work :(
   (config! (select red-jem-frame [:#close-search]) :border nil)
-  
+
   (if (web-api/token?)
     (web-api/load-token)
-    (do 
+    (do
       (spit web-api/obelisk-token-file-path "")
       (config-button-handler nil))))
 
-(init-red-jem)
