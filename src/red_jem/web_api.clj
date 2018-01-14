@@ -16,11 +16,11 @@
   (-> (io/file obelisk-token-file-path) (.isFile)))
 
 (defn load-token []
-  (def api-token 
+  (def api-token
     (trim (slurp obelisk-token-file-path))))
 
 (defn project-members [project-id]
-  (get-in 
+  (get-in
     (client/get 
       (format "https://redmine.visiontree.com/projects/%s/memberships.json"
         project-id) 
@@ -30,16 +30,23 @@
 
 (defn projects []
   (sort-by :name
-    (get-in 
-      (client/get
-        "https://redmine.visiontree.com/projects.json" 
-        {:basic-auth [api-token "d"]
-         :as :json
-         :query-params {:limit 300}})
-      [:body :projects])))
+    ; hack to get 300 results. REST API limits to 100 results per req
+    (filter
+      (fn [i]
+        (= (:status i) 1))
+      (flatten
+        (pmap
+          #(get-in
+             (client/get
+		           "https://redmine.visiontree.com/projects.json"
+		           {:basic-auth [api-token "d"]
+			           :as :json
+			           :query-params {:limit 100 :offset %}})
+          [:body :projects])
+          (range 0 300 100))))))
 
 (defn issue [id]
-  (client/get 
+  (client/get
     (format "https://redmine.visiontree.com/issues/%d.json" 
       (#(Integer/parseInt %) (trim id))) 
     {:as :json
@@ -56,7 +63,7 @@
         web-method (if (number? id)
                      client/put
                      client/post)]
-                          
+
     (web-method url
       {:debug true
        :debug-body true
