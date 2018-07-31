@@ -1,14 +1,14 @@
 (defproject red-jem "1.1.4"
   :description "A notepad for Redmine; create tickets fast"
-  :dependencies [[org.clojure/clojure "1.5.1"]
-                  [seesaw "1.4.4"]
-                  [cheshire "5.3.1"]
-                  [clj-http "0.9.1"]
-                  [org.clojure/core.memoize "0.5.6"]
-                  [org.clojure/data.xml "0.0.7"]]
-  :profiles {:dev {:dependencies [[midje "1.5.0"]]}}
-  :aot [clojure.main red_jem.core]
-  :main red_jem.core
+  :dependencies [[org.clojure/clojure "1.6.0"]
+                  [seesaw "1.5.0"]
+                  [cheshire "5.8.0"]
+                  [clj-http "3.9.0"]
+                  [org.clojure/core.memoize "0.7.1"]
+                  [org.clojure/data.xml "0.0.8"]]
+  :profiles {:dev {:dependencies [[midje "1.9.2"]]}}
+  ;:aot [clojure.main red-jem.core]
+  :main red-jem.core
   :javac-options ["-target" "1.6" "-source" "1.6" "-Xlint:-options"]
   :jvm-opts ["-Xmx128m"])
 
